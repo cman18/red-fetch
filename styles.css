@@ -1,5 +1,0 @@
-body { background:#0e0e0f; color:#ddd; font-family:Arial; margin:0; padding:20px; }
-#posts { display:flex; flex-wrap:wrap; gap:20px; }
-.post-card { background:#1a1a1c; border:1px solid #333; padding:10px; width:300px; border-radius:8px; }
-.post-title { font-size:16px; margin-bottom:10px; color:#9df; }
-.media-container img, .media-container video { width:100%; border-radius:6px; }
