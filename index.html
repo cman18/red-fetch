@@ -1,45 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Red App</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<title>Reddit Viewer</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-<header>
-    <h1>Red App</h1>
-    <p>Client-side viewer for posts. Runs entirely on GitHub Pages.</p>
-</header>
-
-<section id="search-section">
-    <div class="row">
-        <select id="modeSelect">
-            <option value="u">U</option>
-            <option value="r">R</option>
-        </select>
-
-        <input id="userInput" placeholder="User ID or URL here">
-        <button id="loadBtn">Load posts</button>
-        <button id="clearBtn">Clear</button>
-    </div>
-
-    <div class="row filters">
-        <label><input type="checkbox" id="filterImages" checked> Images</label>
-        <label><input type="checkbox" id="filterVideos" checked> Videos</label>
-        <label><input type="checkbox" id="filterOther" checked> Other</label>
-    </div>
-
-    <p id="status">Idle. Paste a profile URL or enter a username then press Load posts.</p>
-</section>
-
-<div id="content"></div>
-
-<footer>
-    Red App Version 006
-</footer>
-
+<div id="posts"></div>
 <script src="viewer.js"></script>
 </body>
 </html>
