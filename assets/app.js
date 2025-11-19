@@ -127,13 +127,6 @@ async function maybeLoadMore() {
 }
 
 async function fetchNextPage(replacing) {
-  if (!state.username || state.username.trim()==="") {
-    const statusEl=document.getElementById('status');
-    if(statusEl) statusEl.textContent="Enter a username or subreddit first.";
-    state.loading=false;
-    return;
-  }
-
   if (state.loading) return;
   state.loading = true;
   try {
