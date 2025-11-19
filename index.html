@@ -1,1 +1,39 @@
-<!-- TODO: Insert your v006 index.html here. -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Red Pull</title>
+  <link rel="stylesheet" href="assets/main.css?v=007b">
+</head>
+
+<body>
+
+<header>
+  <h1>Red Pull</h1>
+</header>
+
+<div id="inputBar">
+  <select id="modeSelect">
+    <option value="u">u/</option>
+    <option value="r">r/</option>
+  </select>
+  <input id="userInput" placeholder="User or Subreddit">
+  <button id="loadBtn">Load Posts</button>
+</div>
+
+<p id="status">Version 007b</p>
+
+<div id="app"></div>
+
+<div id="videoModal" class="modal hidden">
+  <div class="modal-content">
+    <video id="modalVideo" controls muted></video>
+  </div>
+</div>
+
+<button id="scrollTopBtn" class="scroll-top">▲</button>
+
+<script type="module" src="assets/app.js?v=007b"></script>
+</body>
+</html>
