@@ -1,8 +1,9 @@
-/* Version 007e + extended URL support (u/username/s/guid) */
+/* Version 007e + URL sharing + copy button row */
 
 const inputEl = document.getElementById("username");
 const loadBtn = document.getElementById("load-btn");
 const clearBtn = document.getElementById("clear-btn");
+const copyBtn = document.getElementById("copy-btn");
 const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
 const loadingMoreEl = document.getElementById("loading-more");
@@ -11,60 +12,56 @@ let after = null;
 let currentURL = null;
 let loading = false;
 
-/* ================================
-   URL NORMALIZATION (FIXED 007e)
-   ================================ */
+/* ============================================
+   URL NORMALIZATION
+   ============================================ */
 
 function normalizeRedditInput(raw) {
   if (!raw) return null;
 
   raw = raw.trim();
-
-  // Remove query params
   raw = raw.replace(/\?.*$/, "");
 
-  // NEW Reddit share URLs:
-  // https://www.reddit.com/u/username/s/GUID
+  // Handle /u/username/s/guid (Reddit share URLs)
   let sMatch = raw.match(/\/u\/([^\/]+)\/s\//i);
   if (sMatch) {
     return `https://www.reddit.com/user/${sMatch[1]}/submitted.json`;
   }
 
-  // /user/username
+  // /user/name
   let u1 = raw.match(/\/user\/([^\/]+)/i);
   if (u1) {
     return `https://www.reddit.com/user/${u1[1]}/submitted.json`;
   }
 
-  // /u/username
+  // /u/name
   let u2 = raw.match(/\/u\/([^\/]+)/i);
   if (u2) {
     return `https://www.reddit.com/user/${u2[1]}/submitted.json`;
   }
 
-  // /r/subreddit
+  // /r/sub
   let r1 = raw.match(/\/r\/([^\/]+)/i);
   if (r1) {
     return `https://www.reddit.com/r/${r1[1]}/new.json`;
   }
 
-  // short prefix: u/username → user
-  if (raw.startsWith("u/") || raw.startsWith("U/")) {
+  // short forms
+  if (raw.startsWith("u/")) {
     return `https://www.reddit.com/user/${raw.slice(2)}/submitted.json`;
   }
 
-  // short prefix: r/subreddit → subreddit
-  if (raw.startsWith("r/") || raw.startsWith("R/")) {
+  if (raw.startsWith("r/")) {
     return `https://www.reddit.com/r/${raw.slice(2)}/new.json`;
   }
 
-  // If only a name is typed, default to user
+  // fallback = assume username
   return `https://www.reddit.com/user/${raw}/submitted.json`;
 }
 
-/* =============================
+/* ============================================
    LOAD POSTS
-   ============================= */
+   ============================================ */
 
 async function loadPosts(reset = true) {
   if (loading) return;
@@ -92,19 +89,14 @@ async function loadPosts(reset = true) {
 
   try {
     const response = await fetch(fullURL, { cache: "no-store" });
+
     if (!response.ok) throw new Error("Fetch failed");
 
     const json = await response.json();
-    if (!json.data || !json.data.children) {
-      statusEl.textContent = "Error loading posts. Reddit may be blocking the request.";
-      loading = false;
-      return;
-    }
-
     const posts = json.data.children;
     after = json.data.after;
 
-    if (posts.length === 0) {
+    if (!posts.length) {
       statusEl.textContent = "No posts found.";
       loading = false;
       return;
@@ -121,9 +113,9 @@ async function loadPosts(reset = true) {
   loading = false;
 }
 
-/* =============================
+/* ============================================
    RENDER POSTS
-   ============================= */
+   ============================================ */
 
 function renderPosts(posts) {
   posts.forEach((p) => {
@@ -132,23 +124,16 @@ function renderPosts(posts) {
     const card = document.createElement("div");
     card.className = "post-card";
 
-    // VIDEO (Reddit hosted)
     if (post.is_video && post.media?.reddit_video?.fallback_url) {
       const vid = document.createElement("video");
       vid.controls = true;
       vid.src = post.media.reddit_video.fallback_url;
       card.appendChild(vid);
-    }
-
-    // IMAGE (jpg/png/gif)
-    else if (post.url && /\.(jpg|jpeg|png|gif)$/i.test(post.url)) {
+    } else if (post.url && /\.(jpg|jpeg|png|gif)$/i.test(post.url)) {
       const img = document.createElement("img");
       img.src = post.url;
       card.appendChild(img);
-    }
-
-    // OTHER — text fallback
-    else {
+    } else {
       const title = document.createElement("p");
       title.textContent = post.title || "(No preview available)";
       card.appendChild(title);
@@ -158,9 +143,9 @@ function renderPosts(posts) {
   });
 }
 
-/* =============================
+/* ============================================
    BUTTONS
-   ============================= */
+   ============================================ */
 
 loadBtn.onclick = () => loadPosts(true);
 
@@ -170,16 +155,19 @@ clearBtn.onclick = () => {
   statusEl.textContent = "";
 };
 
-/* =============================
+copyBtn.onclick = () => {
+  navigator.clipboard.writeText(inputEl.value.trim());
+  statusEl.textContent = "Copied!";
+  setTimeout(() => (statusEl.textContent = ""), 1200);
+};
+
+/* ============================================
    INFINITE SCROLL
-   ============================= */
+   ============================================ */
 
 window.addEventListener("scroll", () => {
   if (loading) return;
-
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
-    if (after) {
-      loadPosts(false);
-    }
+    if (after) loadPosts(false);
   }
 });
