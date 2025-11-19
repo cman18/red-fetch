@@ -1,51 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Red Github version</title>
-  <link rel="stylesheet" href="assets/main.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Pull</title>
+    <link rel="stylesheet" href="assets/main.css">
 </head>
 <body>
-  <header>
-    <h1>Red Github version</h1>
-    <p>Client side viewer for posts by a Reddit user. Runs entirely on GitHub Pages with no server.</p>
-  </header>
 
-  <section id="search-section">
-    <label>Reddit user or profile URL</label>
+<h1>Red Pull</h1>
 
-    <!-- MAIN INPUT ROW -->
-    <div class="input-row">
-      <span class="prefix">u/</span>
-      <input id="username" placeholder="User ID or URL here" />
-      <button id="load-btn">Load posts</button>
-    </div>
+<div id="container">
 
-    <!-- NEW BUTTON ROW (LEFT ALIGNED) -->
-    <div class="sub-button-row">
-      <button id="copy-btn">Copy URL</button>
-      <button id="clear-btn">Clear</button>
+    <label class="section-title">Reddit user or profile URL</label>
+
+    <div id="input-row">
+        <div id="prefix">u/</div>
+        <input id="username" placeholder="User ID or URL here">
+        
+        <!-- RIGHT COLUMN ACTION BLOCK -->
+        <div id="action-column">
+            <button id="load-btn">Load Posts</button>
+
+            <div id="sub-actions">
+                <button id="copy-btn">Copy URL</button>
+                <button id="clear-btn">Clear</button>
+            </div>
+        </div>
     </div>
 
     <p class="subtext">Paste a full Reddit profile URL or just the username.</p>
 
-    <!-- FILTERS -->
-    <div class="filter-row">
-      <label class="switch"><input type="checkbox" id="filter-images" checked /><span>Images</span></label>
-      <label class="switch"><input type="checkbox" id="filter-videos" checked /><span>Videos</span></label>
-      <label class="switch"><input type="checkbox" id="filter-other" checked /><span>Other</span></label>
+    <div id="filters">
+        <label><input type="checkbox" id="filter-images" checked> Images</label>
+        <label><input type="checkbox" id="filter-videos" checked> Videos</label>
+        <label><input type="checkbox" id="filter-other" checked> Other</label>
     </div>
 
-    <button id="zip-btn" class="zip-btn" disabled>Download ZIP</button>
-  </section>
+    <button id="download-btn">Download ZIP</button>
 
-  <div id="status"></div>
-  <div id="results"></div>
-  <div id="loading-more">Scroll to load more…</div>
+    <p id="status">Idle. Paste a profile URL or enter a username then press Load posts.</p>
 
-  <footer>Version 007e</footer>
+</div>
 
-  <script src="assets/app.js"></script>
+<div id="results"></div>
+
+<p id="scroll-hint" style="display:none;">Scroll to load more…</p>
+
+<p id="version">Version 007e</p>
+
+<script src="assets/app.js"></script>
 </body>
 </html>
