@@ -20,30 +20,50 @@ let loading = false;
 let activeUser = "";
 
 /* ===================================================
-   URL Extractor
+   FIXED EXTRACTOR (handles ALL cases):
+   - /u/username/s/ABCDE
+   - /user/username
+   - /u/username
+   - /r/subreddit
+   - u/username
+   - r/subreddit
+   - plain usernames  <—— fixed
    =================================================== */
+
 function extractUserOrSub(url) {
-    try {
-        if (!url.includes("reddit.com")) return url.replace(/^u\//, "").trim();
+    const raw = url.trim();
 
-        let clean = url;
+    // A) Share URL
+    const share = raw.match(/reddit\.com\/u\/([^\/]+)\/s\//i);
+    if (share) return share[1];
 
-        clean = clean.replace(/\/?s\/.*/, "");
-        clean = clean.replace(/https?:\/\/(www\.)?reddit\.com\//, "");
+    // B) user/username
+    const user1 = raw.match(/reddit\.com\/user\/([^\/]+)/i);
+    if (user1) return user1[1];
 
-        if (clean.startsWith("user/")) return clean.split("/")[1];
-        if (clean.startsWith("u/")) return clean.split("/")[1];
-        if (clean.startsWith("r/")) return clean.split("/")[1];
+    // C) u/username
+    const user2 = raw.match(/reddit\.com\/u\/([^\/]+)/i);
+    if (user2) return user2[1];
 
-        return clean.replace(/\//g, "").trim();
-    } catch {
-        return url.trim();
-    }
+    // D) r/subreddit
+    const sub = raw.match(/reddit\.com\/r\/([^\/]+)/i);
+    if (sub) return sub[1];
+
+    // E) short forms
+    if (raw.startsWith("u/")) return raw.slice(2);
+    if (raw.startsWith("r/")) return raw.slice(2);
+
+    // F) Plain username
+    if (!raw.includes("/")) return raw;
+
+    // G) Final fallback
+    return raw.replace(/\//g, "") || raw;
 }
 
 /* ===================================================
-   Load Posts
+   LOAD POSTS
    =================================================== */
+
 async function loadPosts(reset = true) {
     if (loading) return;
     loading = true;
@@ -56,8 +76,9 @@ async function loadPosts(reset = true) {
     }
 
     const raw = usernameInput.value.trim();
+
     if (!raw) {
-        statusEl.textContent = "Enter a username or full Reddit URL.";
+        statusEl.textContent = "Enter a username or URL.";
         loading = false;
         return;
     }
@@ -73,7 +94,7 @@ async function loadPosts(reset = true) {
         const res = await fetch(endpoint);
         const data = await res.json();
 
-        if (!data.data) throw new Error("Invalid response");
+        if (!data.data) throw new Error("Invalid");
 
         after = data.data.after;
         const posts = data.data.children;
@@ -90,15 +111,16 @@ async function loadPosts(reset = true) {
         if (results.children.length > 0) scrollHint.style.display = "block";
 
     } catch (e) {
-        statusEl.textContent = "Error loading posts. Reddit may be blocking the request.";
+        statusEl.textContent = "Error loading posts.";
     }
 
     loading = false;
 }
 
 /* ===================================================
-   Render Posts + Modal Click
+   RENDER POSTS + CLICK TO ENLARGE
    =================================================== */
+
 function renderPosts(posts) {
     posts.forEach(p => {
         const d = p.data;
@@ -121,7 +143,7 @@ function renderPosts(posts) {
         box.innerHTML = content;
         results.appendChild(box);
 
-        // CLICK TO ENLARGE
+        // Modal enlarge
         box.onclick = () => {
             modal.style.display = "flex";
 
@@ -145,7 +167,7 @@ modal.onclick = () => {
 };
 
 /* ===================================================
-   Buttons
+   BUTTONS
    =================================================== */
 
 loadBtn.onclick = () => loadPosts(true);
@@ -164,7 +186,7 @@ copyBtn.onclick = () => {
 };
 
 /* ===================================================
-   Infinite Scroll
+   INFINITE SCROLL
    =================================================== */
 
 window.addEventListener("scroll", () => {
