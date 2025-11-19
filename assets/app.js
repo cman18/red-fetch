@@ -1,54 +1,75 @@
-/* Version 007e – Fixes ONLY loading + modal issues */
+/* Version 007e + extended URL support (u/username/s/guid) */
 
 const inputEl = document.getElementById("username");
 const loadBtn = document.getElementById("load-btn");
 const clearBtn = document.getElementById("clear-btn");
 const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
+const loadingMoreEl = document.getElementById("loading-more");
 
 let after = null;
 let currentURL = null;
+let loading = false;
 
-// =============================================
-// FIX 1 — Robust URL NORMALIZATION
-// =============================================
+/* ================================
+   URL NORMALIZATION (FIXED 007e)
+   ================================ */
+
 function normalizeRedditInput(raw) {
   if (!raw) return null;
 
   raw = raw.trim();
 
-  // Remove trackers
+  // Remove query params
   raw = raw.replace(/\?.*$/, "");
 
-  // Already a Reddit URL → extract type + name
-  if (raw.includes("reddit.com")) {
-    const uMatch = raw.match(/\/user\/([^\/]+)/i);
-    const rMatch = raw.match(/\/r\/([^\/]+)/i);
-
-    if (uMatch) return `https://www.reddit.com/user/${uMatch[1]}/submitted.json`;
-    if (rMatch) return `https://www.reddit.com/r/${rMatch[1]}/new.json`;
+  // NEW Reddit share URLs:
+  // https://www.reddit.com/u/username/s/GUID
+  let sMatch = raw.match(/\/u\/([^\/]+)\/s\//i);
+  if (sMatch) {
+    return `https://www.reddit.com/user/${sMatch[1]}/submitted.json`;
   }
 
-  // Plain username with "u/" prefix inside UI
+  // /user/username
+  let u1 = raw.match(/\/user\/([^\/]+)/i);
+  if (u1) {
+    return `https://www.reddit.com/user/${u1[1]}/submitted.json`;
+  }
+
+  // /u/username
+  let u2 = raw.match(/\/u\/([^\/]+)/i);
+  if (u2) {
+    return `https://www.reddit.com/user/${u2[1]}/submitted.json`;
+  }
+
+  // /r/subreddit
+  let r1 = raw.match(/\/r\/([^\/]+)/i);
+  if (r1) {
+    return `https://www.reddit.com/r/${r1[1]}/new.json`;
+  }
+
+  // short prefix: u/username → user
   if (raw.startsWith("u/") || raw.startsWith("U/")) {
-    let name = raw.slice(2);
-    return `https://www.reddit.com/user/${name}/submitted.json`;
+    return `https://www.reddit.com/user/${raw.slice(2)}/submitted.json`;
   }
 
-  // Subreddit detection
+  // short prefix: r/subreddit → subreddit
   if (raw.startsWith("r/") || raw.startsWith("R/")) {
-    let name = raw.slice(2);
-    return `https://www.reddit.com/r/${name}/new.json`;
+    return `https://www.reddit.com/r/${raw.slice(2)}/new.json`;
   }
 
-  // If user typed ONLY a name (default to user profile)
+  // If only a name is typed, default to user
   return `https://www.reddit.com/user/${raw}/submitted.json`;
 }
 
-// =============================================
-// Load Posts
-// =============================================
+/* =============================
+   LOAD POSTS
+   ============================= */
+
 async function loadPosts(reset = true) {
+  if (loading) return;
+  loading = true;
+
   statusEl.textContent = "Loading…";
 
   if (reset) {
@@ -57,49 +78,61 @@ async function loadPosts(reset = true) {
   }
 
   const userInput = inputEl.value;
-  const apiURL = normalizeRedditInput(userInput);
+  const baseURL = normalizeRedditInput(userInput);
 
-  if (!apiURL) {
+  if (!baseURL) {
     statusEl.textContent = "Invalid input.";
+    loading = false;
     return;
   }
 
-  currentURL = apiURL;
+  currentURL = baseURL;
+
+  const fullURL = after ? `${baseURL}?after=${after}` : baseURL;
 
   try {
-    const url = after ? `${apiURL}?after=${after}` : apiURL;
-    const response = await fetch(url, { cache: "no-store" });
-
+    const response = await fetch(fullURL, { cache: "no-store" });
     if (!response.ok) throw new Error("Fetch failed");
 
-    const data = await response.json();
-    const posts = data.data.children;
-
-    if (!posts.length) {
-      statusEl.textContent = "No posts found.";
+    const json = await response.json();
+    if (!json.data || !json.data.children) {
+      statusEl.textContent = "Error loading posts. Reddit may be blocking the request.";
+      loading = false;
       return;
     }
 
-    after = data.data.after;
+    const posts = json.data.children;
+    after = json.data.after;
+
+    if (posts.length === 0) {
+      statusEl.textContent = "No posts found.";
+      loading = false;
+      return;
+    }
 
     renderPosts(posts);
     statusEl.textContent = "";
+
   } catch (e) {
     statusEl.textContent =
       "Error loading posts. Reddit may be blocking the request or the user may not exist.";
   }
+
+  loading = false;
 }
 
-// =============================================
-// Render Posts
-// =============================================
+/* =============================
+   RENDER POSTS
+   ============================= */
+
 function renderPosts(posts) {
   posts.forEach((p) => {
     const post = p.data;
+
     const card = document.createElement("div");
     card.className = "post-card";
 
-    // VIDEO
+    // VIDEO (Reddit hosted)
     if (post.is_video && post.media?.reddit_video?.fallback_url) {
       const vid = document.createElement("video");
       vid.controls = true;
@@ -107,17 +140,17 @@ function renderPosts(posts) {
       card.appendChild(vid);
     }
 
-    // IMAGE
+    // IMAGE (jpg/png/gif)
     else if (post.url && /\.(jpg|jpeg|png|gif)$/i.test(post.url)) {
       const img = document.createElement("img");
       img.src = post.url;
       card.appendChild(img);
     }
 
-    // OTHER — show text title only
+    // OTHER — text fallback
     else {
       const title = document.createElement("p");
-      title.textContent = post.title;
+      title.textContent = post.title || "(No preview available)";
       card.appendChild(title);
     }
 
@@ -125,12 +158,28 @@ function renderPosts(posts) {
   });
 }
 
-// =============================================
-// Buttons
-// =============================================
+/* =============================
+   BUTTONS
+   ============================= */
+
 loadBtn.onclick = () => loadPosts(true);
+
 clearBtn.onclick = () => {
   inputEl.value = "";
   resultsEl.innerHTML = "";
   statusEl.textContent = "";
 };
+
+/* =============================
+   INFINITE SCROLL
+   ============================= */
+
+window.addEventListener("scroll", () => {
+  if (loading) return;
+
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+    if (after) {
+      loadPosts(false);
+    }
+  }
+});
