@@ -48,16 +48,11 @@ h1 {
 .inline-load {
     padding: 12px 18px;
     border-radius: 6px;
-    border: none;
-    cursor: pointer;
     background: #4fb9b0;
-    color: black;
+    border: none;
+    color: #000;
     font-weight: bold;
-    white-space: nowrap;
-}
-
-.inline-load:hover {
-    background: #66d1c8;
+    cursor: pointer;
 }
 
 #sub-actions {
@@ -106,16 +101,31 @@ button:hover {
     border-radius: 10px;
     margin-bottom: 18px;
     border: 1px solid #2c2f36;
+    cursor: pointer;
 }
 
-.post img {
+.post img,
+.post video {
     width: 100%;
     border-radius: 8px;
 }
 
-video {
-    width: 100%;
-    border-radius: 8px;
+/* MODAL */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+#modal-content img,
+#modal-content video {
+    max-width: 95%;
+    max-height: 95%;
+    border-radius: 10px;
 }
 
 #scroll-hint {
