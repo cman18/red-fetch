@@ -53,6 +53,7 @@ h1 {
     color: #000;
     font-weight: bold;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 #sub-actions {
@@ -110,7 +111,7 @@ button:hover {
     border-radius: 8px;
 }
 
-/* MODAL */
+/* Modal for click-to-enlarge */
 .modal {
     display: none;
     position: fixed;
