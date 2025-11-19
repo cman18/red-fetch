@@ -136,6 +136,14 @@ button:hover {
     opacity: 0.7;
 }
 
+.right-filters {
+    display: flex;
+    justify-content: flex-end;   /* right align */
+    gap: 20px;                   /* spacing between checkboxes */
+    margin-top: 10px;
+    font-size: 18px;
+}
+
 #version {
     text-align: center;
     margin: 40px 0;
