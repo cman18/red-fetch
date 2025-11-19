@@ -2,9 +2,13 @@ const usernameInput = document.getElementById("username");
 const loadBtn = document.getElementById("load-btn");
 const clearBtn = document.getElementById("clear-btn");
 const copyBtn = document.getElementById("copy-btn");
+
 const results = document.getElementById("results");
 const statusEl = document.getElementById("status");
 const scrollHint = document.getElementById("scroll-hint");
+
+const modal = document.getElementById("modal");
+const modalContent = document.getElementById("modal-content");
 
 // Filters
 const fImages = document.getElementById("filter-images");
@@ -15,7 +19,9 @@ let after = null;
 let loading = false;
 let activeUser = "";
 
-// Extract username OR subreddit from any URL format
+/* ===================================================
+   URL Extractor
+   =================================================== */
 function extractUserOrSub(url) {
     try {
         if (!url.includes("reddit.com")) return url.replace(/^u\//, "").trim();
@@ -35,6 +41,9 @@ function extractUserOrSub(url) {
     }
 }
 
+/* ===================================================
+   Load Posts
+   =================================================== */
 async function loadPosts(reset = true) {
     if (loading) return;
     loading = true;
@@ -67,8 +76,8 @@ async function loadPosts(reset = true) {
         if (!data.data) throw new Error("Invalid response");
 
         after = data.data.after;
-
         const posts = data.data.children;
+
         if (posts.length === 0 && reset) {
             statusEl.textContent = "No posts found.";
             loading = false;
@@ -87,6 +96,9 @@ async function loadPosts(reset = true) {
     loading = false;
 }
 
+/* ===================================================
+   Render Posts + Modal Click
+   =================================================== */
 function renderPosts(posts) {
     posts.forEach(p => {
         const d = p.data;
@@ -94,40 +106,66 @@ function renderPosts(posts) {
         const box = document.createElement("div");
         box.className = "post";
 
-        const title = `<div class="title">${d.title}</div>`;
-        let media = "";
+        let content = "";
 
         if (d.post_hint === "image" && fImages.checked) {
-            media = `<img src="${d.url}" loading="lazy">`;
-        } else if (d.is_video && fVideos.checked) {
-            media = `<video controls preload="none">
-                        <source src="${d.media.reddit_video.fallback_url}">
-                     </video>`;
-        } else if (fOther.checked) {
-            media = `<a href="${d.url}" target="_blank">${d.url}</a>`;
+            content = `<img src="${d.url}" loading="lazy">`;
+        }
+        else if (d.is_video && fVideos.checked) {
+            content = `<video preload="none"><source src="${d.media.reddit_video.fallback_url}"></video>`;
+        }
+        else if (fOther.checked) {
+            content = `<a href="${d.url}" target="_blank">${d.url}</a>`;
         }
 
-        box.innerHTML = title + media;
+        box.innerHTML = content;
         results.appendChild(box);
+
+        // CLICK TO ENLARGE
+        box.onclick = () => {
+            modal.style.display = "flex";
+
+            if (d.post_hint === "image") {
+                modalContent.innerHTML = `<img src="${d.url}">`;
+            }
+            else if (d.is_video) {
+                modalContent.innerHTML = `
+                    <video controls autoplay>
+                        <source src="${d.media.reddit_video.fallback_url}">
+                    </video>`;
+            }
+        };
     });
 }
 
-function clearAll() {
+// Close modal
+modal.onclick = () => {
+    modal.style.display = "none";
+    modalContent.innerHTML = "";
+};
+
+/* ===================================================
+   Buttons
+   =================================================== */
+
+loadBtn.onclick = () => loadPosts(true);
+
+clearBtn.onclick = () => {
     usernameInput.value = "";
     results.innerHTML = "";
     statusEl.textContent = "Cleared.";
     scrollHint.style.display = "none";
     after = null;
-}
+};
 
-function copyURL() {
+copyBtn.onclick = () => {
     navigator.clipboard.writeText(usernameInput.value.trim());
     statusEl.textContent = "URL copied.";
-}
+};
 
-loadBtn.onclick = () => loadPosts(true);
-clearBtn.onclick = clearAll;
-copyBtn.onclick = copyURL;
+/* ===================================================
+   Infinite Scroll
+   =================================================== */
 
 window.addEventListener("scroll", () => {
     if (loading) return;
