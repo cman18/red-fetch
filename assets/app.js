@@ -1,173 +1,138 @@
-/* Version 007e + URL sharing + copy button row */
-
-const inputEl = document.getElementById("username");
+const usernameInput = document.getElementById("username");
 const loadBtn = document.getElementById("load-btn");
 const clearBtn = document.getElementById("clear-btn");
 const copyBtn = document.getElementById("copy-btn");
+const results = document.getElementById("results");
 const statusEl = document.getElementById("status");
-const resultsEl = document.getElementById("results");
-const loadingMoreEl = document.getElementById("loading-more");
+const scrollHint = document.getElementById("scroll-hint");
+
+// Filters
+const fImages = document.getElementById("filter-images");
+const fVideos = document.getElementById("filter-videos");
+const fOther = document.getElementById("filter-other");
 
 let after = null;
-let currentURL = null;
 let loading = false;
+let activeUser = "";
 
-/* ============================================
-   URL NORMALIZATION
-   ============================================ */
+// Extract username OR subreddit from any URL format
+function extractUserOrSub(url) {
+    try {
+        if (!url.includes("reddit.com")) return url.replace(/^u\//, "").trim();
 
-function normalizeRedditInput(raw) {
-  if (!raw) return null;
+        let clean = url;
 
-  raw = raw.trim();
-  raw = raw.replace(/\?.*$/, "");
+        clean = clean.replace(/\/?s\/.*/, "");
+        clean = clean.replace(/https?:\/\/(www\.)?reddit\.com\//, "");
 
-  // Handle /u/username/s/guid (Reddit share URLs)
-  let sMatch = raw.match(/\/u\/([^\/]+)\/s\//i);
-  if (sMatch) {
-    return `https://www.reddit.com/user/${sMatch[1]}/submitted.json`;
-  }
+        if (clean.startsWith("user/")) return clean.split("/")[1];
+        if (clean.startsWith("u/")) return clean.split("/")[1];
+        if (clean.startsWith("r/")) return clean.split("/")[1];
 
-  // /user/name
-  let u1 = raw.match(/\/user\/([^\/]+)/i);
-  if (u1) {
-    return `https://www.reddit.com/user/${u1[1]}/submitted.json`;
-  }
-
-  // /u/name
-  let u2 = raw.match(/\/u\/([^\/]+)/i);
-  if (u2) {
-    return `https://www.reddit.com/user/${u2[1]}/submitted.json`;
-  }
-
-  // /r/sub
-  let r1 = raw.match(/\/r\/([^\/]+)/i);
-  if (r1) {
-    return `https://www.reddit.com/r/${r1[1]}/new.json`;
-  }
-
-  // short forms
-  if (raw.startsWith("u/")) {
-    return `https://www.reddit.com/user/${raw.slice(2)}/submitted.json`;
-  }
-
-  if (raw.startsWith("r/")) {
-    return `https://www.reddit.com/r/${raw.slice(2)}/new.json`;
-  }
-
-  // fallback = assume username
-  return `https://www.reddit.com/user/${raw}/submitted.json`;
+        return clean.replace(/\//g, "").trim();
+    } catch {
+        return url.trim();
+    }
 }
-
-/* ============================================
-   LOAD POSTS
-   ============================================ */
 
 async function loadPosts(reset = true) {
-  if (loading) return;
-  loading = true;
+    if (loading) return;
+    loading = true;
+    statusEl.textContent = "Loading…";
 
-  statusEl.textContent = "Loading…";
-
-  if (reset) {
-    resultsEl.innerHTML = "";
-    after = null;
-  }
-
-  const userInput = inputEl.value;
-  const baseURL = normalizeRedditInput(userInput);
-
-  if (!baseURL) {
-    statusEl.textContent = "Invalid input.";
-    loading = false;
-    return;
-  }
-
-  currentURL = baseURL;
-
-  const fullURL = after ? `${baseURL}?after=${after}` : baseURL;
-
-  try {
-    const response = await fetch(fullURL, { cache: "no-store" });
-
-    if (!response.ok) throw new Error("Fetch failed");
-
-    const json = await response.json();
-    const posts = json.data.children;
-    after = json.data.after;
-
-    if (!posts.length) {
-      statusEl.textContent = "No posts found.";
-      loading = false;
-      return;
+    if (reset) {
+        results.innerHTML = "";
+        after = null;
+        scrollHint.style.display = "none";
     }
 
-    renderPosts(posts);
-    statusEl.textContent = "";
+    const raw = usernameInput.value.trim();
+    if (!raw) {
+        statusEl.textContent = "Enter a username or full Reddit URL.";
+        loading = false;
+        return;
+    }
 
-  } catch (e) {
-    statusEl.textContent =
-      "Error loading posts. Reddit may be blocking the request or the user may not exist.";
-  }
+    activeUser = extractUserOrSub(raw);
 
-  loading = false;
+    const isSub = raw.includes("/r/") || raw.includes("reddit.com/r/");
+    const endpoint = isSub
+        ? `https://www.reddit.com/r/${activeUser}/.json?limit=20${after ? "&after=" + after : ""}`
+        : `https://www.reddit.com/user/${activeUser}/submitted/.json?limit=20${after ? "&after=" + after : ""}`;
+
+    try {
+        const res = await fetch(endpoint);
+        const data = await res.json();
+
+        if (!data.data) throw new Error("Invalid response");
+
+        after = data.data.after;
+
+        const posts = data.data.children;
+        if (posts.length === 0 && reset) {
+            statusEl.textContent = "No posts found.";
+            loading = false;
+            return;
+        }
+
+        renderPosts(posts);
+
+        statusEl.textContent = after ? "Scroll to load more…" : "Done.";
+        if (results.children.length > 0) scrollHint.style.display = "block";
+
+    } catch (e) {
+        statusEl.textContent = "Error loading posts. Reddit may be blocking the request.";
+    }
+
+    loading = false;
 }
-
-/* ============================================
-   RENDER POSTS
-   ============================================ */
 
 function renderPosts(posts) {
-  posts.forEach((p) => {
-    const post = p.data;
+    posts.forEach(p => {
+        const d = p.data;
 
-    const card = document.createElement("div");
-    card.className = "post-card";
+        const box = document.createElement("div");
+        box.className = "post";
 
-    if (post.is_video && post.media?.reddit_video?.fallback_url) {
-      const vid = document.createElement("video");
-      vid.controls = true;
-      vid.src = post.media.reddit_video.fallback_url;
-      card.appendChild(vid);
-    } else if (post.url && /\.(jpg|jpeg|png|gif)$/i.test(post.url)) {
-      const img = document.createElement("img");
-      img.src = post.url;
-      card.appendChild(img);
-    } else {
-      const title = document.createElement("p");
-      title.textContent = post.title || "(No preview available)";
-      card.appendChild(title);
-    }
+        const title = `<div class="title">${d.title}</div>`;
+        let media = "";
 
-    resultsEl.appendChild(card);
-  });
+        if (d.post_hint === "image" && fImages.checked) {
+            media = `<img src="${d.url}" loading="lazy">`;
+        } else if (d.is_video && fVideos.checked) {
+            media = `<video controls preload="none">
+                        <source src="${d.media.reddit_video.fallback_url}">
+                     </video>`;
+        } else if (fOther.checked) {
+            media = `<a href="${d.url}" target="_blank">${d.url}</a>`;
+        }
+
+        box.innerHTML = title + media;
+        results.appendChild(box);
+    });
 }
 
-/* ============================================
-   BUTTONS
-   ============================================ */
+function clearAll() {
+    usernameInput.value = "";
+    results.innerHTML = "";
+    statusEl.textContent = "Cleared.";
+    scrollHint.style.display = "none";
+    after = null;
+}
+
+function copyURL() {
+    navigator.clipboard.writeText(usernameInput.value.trim());
+    statusEl.textContent = "URL copied.";
+}
 
 loadBtn.onclick = () => loadPosts(true);
-
-clearBtn.onclick = () => {
-  inputEl.value = "";
-  resultsEl.innerHTML = "";
-  statusEl.textContent = "";
-};
-
-copyBtn.onclick = () => {
-  navigator.clipboard.writeText(inputEl.value.trim());
-  statusEl.textContent = "Copied!";
-  setTimeout(() => (statusEl.textContent = ""), 1200);
-};
-
-/* ============================================
-   INFINITE SCROLL
-   ============================================ */
+clearBtn.onclick = clearAll;
+copyBtn.onclick = copyURL;
 
 window.addEventListener("scroll", () => {
-  if (loading) return;
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
-    if (after) loadPosts(false);
-  }
+    if (loading) return;
+    if (!after) return;
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+        loadPosts(false);
+    }
 });
