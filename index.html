@@ -6,51 +6,38 @@
     <title>Red Pull</title>
     <link rel="stylesheet" href="assets/main.css">
 </head>
+
 <body>
+    <h1 class="title">Red Pull</h1>
 
-<h1>Red Pull</h1>
+    <div class="container">
 
-<div id="container">
+        <div class="input-row">
+            <div class="prefix">u/</div>
+            <input id="username" type="text" placeholder="User ID or URL here">
+            <button id="loadBtn" onclick="loadPosts(true)">Load Posts</button>
+        </div>
 
-    <div id="input-row">
-        <div id="prefix">u/</div>
-        <input id="username" placeholder="User ID or URL here">
+        <div class="actions-row">
+            <button id="copyBtn" onclick="copyURL()">Copy URL</button>
+            <button id="clearBtn" onclick="clearAll()">Clear</button>
+        </div>
 
-        <!-- INLINE load button -->
-        <button id="load-btn" class="inline-load">Load Posts</button>
+        <div class="filters">
+            <label><input type="checkbox" id="filterImages" checked> Images</label>
+            <label><input type="checkbox" id="filterVideos" checked> Videos</label>
+            <label><input type="checkbox" id="filterOther" checked> Other</label>
+
+            <button id="zipBtn" onclick="downloadZIP()">Download ZIP</button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div id="results"></div>
     </div>
 
-    <!-- Copy + Clear aligned under Load Posts -->
-    <div id="sub-actions">
-        <button id="copy-btn">Copy URL</button>
-        <button id="clear-btn">Clear</button>
-    </div>
+    <div class="version">Version 007h</div>
 
-    <!-- Removed the text here per request -->
-    
-    <div id="filters" class="right-filters">
-        <label><input type="checkbox" id="filter-images" checked> Images</label>
-        <label><input type="checkbox" id="filter-videos" checked> Videos</label>
-        <label><input type="checkbox" id="filter-other" checked> Other</label>
-    </div>
-
-<p id="status"></p>
-
-    <button id="download-btn">Download ZIP</button>
-
-</div>
-
-<div id="results"></div>
-
-<p id="scroll-hint" style="display:none;">Scroll to load more…</p>
-
-<!-- Modal for enlarged image/video -->
-<div id="modal" class="modal">
-    <div id="modal-content"></div>
-</div>
-
-<p id="version">Version 007g</p>
-
-<script src="assets/app.js"></script>
+    <script src="assets/app.js"></script>
 </body>
 </html>
