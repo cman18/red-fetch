@@ -70,34 +70,3 @@ button:disabled{opacity:.6;cursor:default;}
   .card-media{max-height:260px;}
   .gallery{padding:.25rem 1.8rem .75rem 1.8rem;}
 }
-
-
-.input-wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-.mode-select {
-  border: none;
-  background: transparent;
-  color: inherit;
-  padding: 0 6px;
-  font-size: inherit;
-  height: 100%;
-  cursor: pointer;
-}
-.input-wrapper input {
-  padding-left: 40px;
-}
-.modal {
- position: fixed;
- top:0; left:0;
- width:100%; height:100%;
- background: rgba(0,0,0,0.85);
- display:none;
- align-items:center;
- justify-content:center;
- z-index:10000;
-}
-.modal.show { display:flex; }
-.modal video { max-width:90%; max-height:90%; }
