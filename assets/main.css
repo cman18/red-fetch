@@ -1,152 +1,93 @@
 body {
-    background: #0d0d0f;
-    color: #e0faff;
     font-family: Arial, sans-serif;
+    background: #0f0f0f;
+    color: #d6fdfd;
     margin: 0;
     padding: 0;
 }
 
-h1 {
+.title {
     text-align: center;
-    padding: 40px 0 20px;
+    padding: 30px 0;
     font-size: 48px;
-    color: #bafcff;
+    color: #b8ffff;
 }
 
-#container {
-    background: #111217;
-    width: 90%;
-    max-width: 1400px;
+.container {
+    max-width: 1200px;
     margin: auto;
-    padding: 25px;
-    border-radius: 12px;
-    border: 1px solid #2a2d33;
+    padding: 20px;
 }
 
-#input-row {
+.input-row {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-#prefix {
-    background: #1b1d22;
-    padding: 10px 14px;
+.prefix {
+    background: #222;
+    padding: 10px 16px;
     border-radius: 6px;
-    border: 1px solid #31343b;
 }
 
-#username {
+input {
     flex: 1;
-    padding: 11px 14px;
+    padding: 12px;
+    background: #111;
+    border: 1px solid #333;
+    color: #fff;
     border-radius: 6px;
-    background: #121317;
-    border: 1px solid #31343b;
-    color: #dffaff;
-}
-
-.inline-load {
-    padding: 12px 18px;
-    border-radius: 6px;
-    background: #4fb9b0;
-    border: none;
-    color: #000;
-    font-weight: bold;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-#sub-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 10px;
-    gap: 10px;
+    outline: none;
 }
 
 button {
-    padding: 10px 18px;
+    padding: 12px 20px;
     border-radius: 6px;
+    background: #9ef3e6;
     border: none;
     cursor: pointer;
-    background: #4fb9b0;
-    color: black;
+    color: #000;
     font-weight: bold;
 }
 
-button:hover {
-    background: #66d1c8;
+.actions-row {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
 }
 
-#filters {
-    margin-top: 20px;
+.filters {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
-#filters label {
-    margin-right: 20px;
-    font-size: 18px;
-}
-
-#status {
-    margin-top: 18px;
-    font-size: 17px;
-}
-
-#results {
-    width: 90%;
-    margin: 20px auto;
+.status {
+    margin-top: 15px;
+    color: #ff8f8f;
+    white-space: pre-wrap;
 }
 
 .post {
-    background: #14161b;
+    background: #1a1a1a;
     padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 18px;
-    border: 1px solid #2c2f36;
-    cursor: pointer;
+    margin-top: 15px;
+    border-radius: 8px;
 }
 
 .post img,
 .post video {
-    width: 100%;
+    max-width: 100%;
     border-radius: 8px;
-}
-
-/* Modal for click-to-enlarge */
-.modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-}
-
-#modal-content img,
-#modal-content video {
-    max-width: 95%;
-    max-height: 95%;
-    border-radius: 10px;
-}
-
-#scroll-hint {
-    text-align: center;
-    margin: 40px 0;
-    font-size: 20px;
-    opacity: 0.7;
-}
-
-.right-filters {
-    display: flex;
-    justify-content: flex-end;   /* right align */
-    gap: 20px;                   /* spacing between checkboxes */
     margin-top: 10px;
-    font-size: 18px;
+    cursor: pointer;
 }
 
-#version {
+.version {
     text-align: center;
-    margin: 40px 0;
-    opacity: 0.4;
-    font-size: 18px;
+    padding: 20px;
+    opacity: 0.5;
+    font-size: 14px;
 }
