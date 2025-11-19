@@ -19,28 +19,39 @@ async function loadPosts() {
             <div class="post-title">${d.title}</div>
         `;
 
-        let media = null;
+        let mediaElem = null;
 
-        if (d.is_video && d.media?.reddit_video) {
-            const vidUrl = d.media.reddit_video.fallback_url;
-            const thumb = d.thumbnail && d.thumbnail !== "default" ? d.thumbnail : "";
+        // Enhanced video/gif detection (007a)
+        const isRedditVideo = d.is_video && d.media?.reddit_video;
+        const isGif = d.url.endsWith(".gif") || d.url.endsWith(".gifv");
+        const isMp4 = d.url.endsWith(".mp4");
+        const isPreviewVideo = isGif || isMp4 || isRedditVideo;
 
-            media = document.createElement("img");
-            media.className = "thumb video-thumb";
-            media.dataset.src = vidUrl;
-            media.src = thumb || "https://i.redd.it/no_thumbnail.png";
+        if (isPreviewVideo) {
+            const videoUrl = isRedditVideo
+                ? d.media.reddit_video.fallback_url
+                : d.url.replace(".gifv", ".mp4");
 
-            setupVideoHover(media);
-            setupVideoClick(media);
+            const thumbnail = d.thumbnail && d.thumbnail !== "default"
+                ? d.thumbnail
+                : d.preview?.images?.[0]?.source?.url || "";
+
+            mediaElem = document.createElement("img");
+            mediaElem.className = "thumb video-thumb";
+            mediaElem.dataset.src = videoUrl;
+            mediaElem.src = thumbnail || "https://i.redd.it/no_thumbnail.png";
+
+            setupVideoHover(mediaElem);
+            setupVideoClick(mediaElem);
         }
 
-        else if (d.url.match(/\.(jpg|png|jpeg|gif)$/i)) {
-            media = document.createElement("img");
-            media.className = "thumb";
-            media.src = d.url;
+        else if (d.url.match(/\.(jpg|png|jpeg)$/i)) {
+            mediaElem = document.createElement("img");
+            mediaElem.className = "thumb";
+            mediaElem.src = d.url;
         }
 
-        if (media) card.appendChild(media);
+        if (mediaElem) card.appendChild(mediaElem);
         container.appendChild(card);
     });
 }
