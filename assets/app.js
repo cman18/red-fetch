@@ -132,7 +132,14 @@ async function fetchNextPage(replacing) {
   try {
     const params = new URLSearchParams({ raw_json: '1', limit: '50' });
     if (state.after) params.set('after', state.after);
-    const url = `https://www.reddit.com/user/${encodeURIComponent(state.username)}/submitted.json?` + params.toString();
+    const modeSel=document.getElementById('modeSelect');
+  const mode=modeSel?modeSel.value:'u';
+  let url="";
+  if(mode==='u'){
+    url = `https://www.reddit.com/user/${encodeURIComponent(state.username)}/submitted.json?` + params.toString();
+  } else {
+    url = `https://www.reddit.com/r/${encodeURIComponent(state.username)}/hot.json?limit=50`;
+  }
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
@@ -489,4 +496,22 @@ function inferExt(url, fallback) {
   const m = u.match(/\.([a-z0-9]{2,4})$/i);
   if (m) return m[1].toLowerCase();
   return fallback;
+}
+
+
+document.addEventListener('click',e=>{
+ if(e.target.tagName==='VIDEO' && e.target.classList.contains('thumb')){
+   const modal=document.getElementById('videoModal');
+   const player=document.getElementById('modalPlayer');
+   if(modal && player){
+     player.src=e.target.src;
+     modal.classList.add('show');
+   }
+ }
+});
+const modal=document.getElementById('videoModal');
+if(modal){
+ modal.addEventListener('click',()=>{
+   modal.classList.remove('show');
+ });
 }
