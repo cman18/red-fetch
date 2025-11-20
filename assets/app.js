@@ -9,6 +9,10 @@ const imgFilter = document.getElementById("imgFilter");
 const vidFilter = document.getElementById("vidFilter");
 const otherFilter = document.getElementById("otherFilter");
 
+
+/* ---------------------------------------
+   Username extract
+---------------------------------------- */
 function extractUsername(text) {
     if (!text) return null;
     text = text.trim();
@@ -27,6 +31,10 @@ function extractUsername(text) {
     return null;
 }
 
+
+/* ---------------------------------------
+   Load Reddit posts
+---------------------------------------- */
 async function loadPosts() {
     results.innerHTML = "";
 
@@ -59,13 +67,17 @@ async function loadPosts() {
     }
 }
 
-/* Detect GIF link */
-function isGif(url) {
+
+/* ---------------------------------------
+   GIF helpers
+---------------------------------------- */
+function isGifLike(url) {
     return (
         url.endsWith(".gif") ||
         url.endsWith(".gifv") ||
-        url.includes("imgur.com") && url.match(/\.gifv?$/) ||
-        url.includes("gfycat")
+        url.includes("imgur.com") && (url.endsWith(".gif") || url.endsWith(".gifv")) ||
+        url.includes("gfycat.com") ||
+        url.includes("redgifs.com")
     );
 }
 
@@ -75,34 +87,84 @@ function convertGifToMP4(url) {
     return url;
 }
 
-function renderPost(post) {
-    let div = document.createElement("div");
+
+/* ---------------------------------------
+   RedGifs API fetch
+---------------------------------------- */
+async function fetchRedGifsMP4(id) {
+    const api = `https://api.redgifs.com/v2/gifs/${id}`;
+    const res = await fetch(api);
+
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    if (!json || !json.gif || !json.gif.urls) return null;
+
+    return (
+        json.gif.urls.hd ||
+        json.gif.urls.sd ||
+        json.gif.urls.mobile ||
+        null
+    );
+}
+
+function extractRedGifsID(url) {
+    const m = url.match(/redgifs\.com\/(?:watch|ifr)\/([A-Za-z0-9]+)/i);
+    return m ? m[1] : null;
+}
+
+
+/* ---------------------------------------
+   Render post
+---------------------------------------- */
+async function renderPost(post) {
+    const url = post.url || "";
+    const div = document.createElement("div");
     div.className = "post";
 
+    // title
     let title = document.createElement("div");
     title.textContent = post.title;
     title.style.marginBottom = "12px";
     div.appendChild(title);
 
-    let url = post.url || "";
+    /* ---------------------------
+       ⭐ REDGIFS SUPPORT
+    ----------------------------*/
+    if (isGifLike(url) && url.includes("redgifs.com")) {
+        const id = extractRedGifsID(url);
 
-    /* ------------------------------------------
-       ⭐ GIF SUPPORT
-    -------------------------------------------*/
-    if (imgFilter.checked && isGif(url)) {
-        let mp4 = convertGifToMP4(url);
+        if (id) {
+            const mp4 = await fetchRedGifsMP4(id);
+            if (mp4) {
+                const vid = document.createElement("video");
+                vid.src = mp4;
+                vid.loop = true;
+                vid.muted = true;      // autoplay muted
+                vid.autoplay = true;   // autoplay always
+                vid.playsInline = true;
+                vid.onclick = () => openFullscreen(mp4, "video");
 
-        let vid = document.createElement("video");
+                div.appendChild(vid);
+                results.appendChild(div);
+                return;
+            }
+        }
+    }
+
+    /* ---------------------------
+       ⭐ NORMAL GIF/GIFV/IMGUR
+    ----------------------------*/
+    if (isGifLike(url) && !post.is_video) {
+        const mp4 = convertGifToMP4(url);
+
+        const vid = document.createElement("video");
         vid.src = mp4;
         vid.loop = true;
-        vid.muted = false;
-        vid.controls = false;
+        vid.muted = true;
+        vid.autoplay = true;
+        vid.playsInline = true;
 
-        // hover autoplay
-        vid.onmouseenter = () => vid.play();
-        vid.onmouseleave = () => vid.pause();
-
-        // click enlarge
         vid.onclick = () => openFullscreen(mp4, "video");
 
         div.appendChild(vid);
@@ -110,37 +172,34 @@ function renderPost(post) {
         return;
     }
 
-    /* ------------------------------------------
-       ⭐ NORMAL IMAGES
-    -------------------------------------------*/
-    if (imgFilter.checked && post.post_hint === "image" && url) {
+    /* ---------------------------
+       ⭐ IMAGES
+    ----------------------------*/
+    if (imgFilter.checked && post.post_hint === "image") {
         const img = document.createElement("img");
         img.src = url;
         img.onclick = () => openFullscreen(img.src, "img");
         div.appendChild(img);
     }
 
-    /* ------------------------------------------
-       ⭐ NORMAL VIDEOS (with sound)
-    -------------------------------------------*/
+    /* ---------------------------
+       ⭐ NORMAL REDDIT VIDEOS
+    ----------------------------*/
     if (vidFilter.checked && post.is_video && post.media?.reddit_video?.fallback_url) {
         const vid = document.createElement("video");
         vid.src = post.media.reddit_video.fallback_url;
         vid.controls = true;
-        vid.muted = false;   // allow sound
+        vid.autoplay = false;
+        vid.muted = false;
+
         vid.onclick = () => openFullscreen(vid.src, "video");
-
-        // hover autoplay
-        vid.onmouseenter = () => vid.play();
-        vid.onmouseleave = () => vid.pause();
-
         div.appendChild(vid);
     }
 
-    /* ------------------------------------------
+    /* ---------------------------
        ⭐ OTHER LINKS
-    -------------------------------------------*/
-    if (otherFilter.checked && !post.is_video && !post.post_hint?.includes("image") && !isGif(url)) {
+    ----------------------------*/
+    if (otherFilter.checked && !post.is_video && !isGifLike(url)) {
         const link = document.createElement("a");
         link.href = url;
         link.textContent = url;
@@ -151,6 +210,10 @@ function renderPost(post) {
     results.appendChild(div);
 }
 
+
+/* ---------------------------------------
+   Fullscreen viewer
+---------------------------------------- */
 function openFullscreen(src, type) {
     const overlay = document.createElement("div");
     overlay.className = "fullscreen-media";
@@ -171,6 +234,8 @@ function openFullscreen(src, type) {
     document.body.appendChild(overlay);
 }
 
+
+/* Buttons */
 loadBtn.onclick = loadPosts;
 
 clearBtn.onclick = () => {
