@@ -22,6 +22,7 @@ body {
     border-radius: 14px;
 }
 
+/* Rows above the gallery */
 .input-row, .action-row, .filters-row {
     display: flex;
     align-items: center;
@@ -58,6 +59,7 @@ button:hover {
     filter: brightness(1.1);
 }
 
+/* Two-column layout */
 .grid-results {
     max-width: 1000px;
     margin: 30px auto;
@@ -66,11 +68,13 @@ button:hover {
     gap: 18px;
 }
 
+/* Post boxes */
 .post {
     background: #161616;
     padding: 18px;
     border-radius: 12px;
     border: 1px solid #333;
+    position: relative;
 }
 
 .post img,
@@ -84,7 +88,15 @@ button:hover {
     margin: 10px auto;
 }
 
-/* Fullscreen viewer */
+/* URL under each post */
+.post-url {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #88ddee;
+    word-break: break-all;
+}
+
+/* Fullscreen overlay */
 .fullscreen-media {
     position: fixed;
     inset: 0;
@@ -101,7 +113,7 @@ button:hover {
     max-height: 95%;
 }
 
-/* Gallery arrows */
+/* Fullscreen arrows */
 .gallery-arrow {
     position: absolute;
     top: 50%;
@@ -120,6 +132,28 @@ button:hover {
 
 .gallery-arrow-right {
     right: 30px;
+}
+
+/* Main-page gallery arrows (over thumbnails) */
+.gallery-arrow-main {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.18);
+    cursor: pointer;
+    color: white;
+    font-size: 22px;
+    user-select: none;
+    border-radius: 6px;
+}
+
+.gallery-arrow-main-left {
+    left: 6px;
+}
+
+.gallery-arrow-main-right {
+    right: 6px;
 }
 
 /* Scroll to top button */
@@ -142,6 +176,7 @@ button:hover {
     filter: brightness(1.1);
 }
 
+/* Version label */
 .version {
     text-align: center;
     margin-top: 40px;
