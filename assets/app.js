@@ -11,22 +11,17 @@ const otherFilter = document.getElementById("otherFilter");
 
 function extractUsername(text) {
     if (!text) return null;
-
     text = text.trim();
 
-    // shared link /u/name/s/guide
     let m = text.match(/\/u\/([^\/]+)/i);
     if (m) return m[1];
 
-    // classic reddit.com/user/username
     m = text.match(/reddit\.com\/user\/([^\/]+)/i);
     if (m) return m[1];
 
-    // direct u/username
     m = text.match(/\bu\/([A-Za-z0-9_-]+)/i);
     if (m) return m[1];
 
-    // plain username
     if (/^[A-Za-z0-9_-]{2,30}$/.test(text)) return text;
 
     return null;
@@ -47,7 +42,7 @@ async function loadPosts() {
         const url = `https://api.reddit.com/user/${username}/submitted?raw_json=1`;
         const res = await fetch(url);
 
-        if (!res.ok) throw new Error("Reddit blocked the request");
+        if (!res.ok) throw new Error("Reddit blocked");
 
         const data = await res.json();
         const posts = data.data.children;
@@ -73,7 +68,6 @@ function renderPost(post) {
     title.style.marginBottom = "12px";
     div.appendChild(title);
 
-    // IMAGE
     if (imgFilter.checked && post.post_hint === "image" && post.url) {
         const img = document.createElement("img");
         img.src = post.url;
@@ -81,7 +75,6 @@ function renderPost(post) {
         div.appendChild(img);
     }
 
-    // VIDEO
     if (vidFilter.checked && post.is_video && post.media?.reddit_video?.fallback_url) {
         const vid = document.createElement("video");
         vid.controls = true;
@@ -90,7 +83,6 @@ function renderPost(post) {
         div.appendChild(vid);
     }
 
-    // OTHER LINKS
     if (otherFilter.checked && !post.is_video && !post.post_hint?.includes("image")) {
         const link = document.createElement("a");
         link.href = post.url;
@@ -134,4 +126,4 @@ copyBtn.onclick = () => {
 };
 
 zipBtn.onclick = () =>
-    alert("ZIP downloads coming soon (after pagination update).");
+    alert("ZIP downloads coming soon.");
