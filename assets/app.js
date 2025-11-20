@@ -10,20 +10,23 @@ const vidFilter = document.getElementById("vidFilter");
 const otherFilter = document.getElementById("otherFilter");
 
 function extractUsername(text) {
+    if (!text) return null;
 
-    // Shared URL like /u/name/s/guid
-    let match = text.match(/\/u\/([^\/]+)/i);
-    if (match) return match[1];
+    text = text.trim();
 
-    // Classic profile link
-    match = text.match(/reddit\.com\/user\/([^\/]+)/i);
-    if (match) return match[1];
+    // shared link /u/name/s/guide
+    let m = text.match(/\/u\/([^\/]+)/i);
+    if (m) return m[1];
 
-    // Direct /u/name/
-    match = text.match(/reddit\.com\/u\/([^\/]+)/i);
-    if (match) return match[1];
+    // classic reddit.com/user/username
+    m = text.match(/reddit\.com\/user\/([^\/]+)/i);
+    if (m) return m[1];
 
-    // Plain username
+    // direct u/username
+    m = text.match(/\bu\/([A-Za-z0-9_-]+)/i);
+    if (m) return m[1];
+
+    // plain username
     if (/^[A-Za-z0-9_-]{2,30}$/.test(text)) return text;
 
     return null;
@@ -31,22 +34,23 @@ function extractUsername(text) {
 
 async function loadPosts() {
     results.innerHTML = "";
-    let raw = input.value.trim();
-    let username = extractUsername(raw);
+
+    const raw = input.value.trim();
+    const username = extractUsername(raw);
 
     if (!username) {
         results.innerHTML = "<div class='post'>Invalid username or URL.</div>";
         return;
     }
 
-    let url = `https://www.reddit.com/user/${username}/submitted.json?raw_json=1`;
-
     try {
-        let req = await fetch(url);
-        if (!req.ok) throw new Error("Reddit blocked");
+        const url = `https://api.reddit.com/user/${username}/submitted?raw_json=1`;
+        const res = await fetch(url);
 
-        let data = await req.json();
-        let posts = data.data.children;
+        if (!res.ok) throw new Error("Reddit blocked the request");
+
+        const data = await res.json();
+        const posts = data.data.children;
 
         if (!posts.length) {
             results.innerHTML = "<div class='post'>No posts found.</div>";
@@ -67,29 +71,28 @@ function renderPost(post) {
     let title = document.createElement("div");
     title.textContent = post.title;
     title.style.marginBottom = "12px";
-
     div.appendChild(title);
 
-    // IMAGES
+    // IMAGE
     if (imgFilter.checked && post.post_hint === "image" && post.url) {
-        let img = document.createElement("img");
+        const img = document.createElement("img");
         img.src = post.url;
         img.onclick = () => openFullscreen(img.src, "img");
         div.appendChild(img);
     }
 
-    // VIDEOS
-    if (vidFilter.checked && post.is_video && post.media?.reddit_video) {
-        let vid = document.createElement("video");
-        vid.src = post.media.reddit_video.fallback_url;
+    // VIDEO
+    if (vidFilter.checked && post.is_video && post.media?.reddit_video?.fallback_url) {
+        const vid = document.createElement("video");
         vid.controls = true;
+        vid.src = post.media.reddit_video.fallback_url;
         vid.onclick = () => openFullscreen(vid.src, "video");
         div.appendChild(vid);
     }
 
-    // OTHER CONTENT
+    // OTHER LINKS
     if (otherFilter.checked && !post.is_video && !post.post_hint?.includes("image")) {
-        let link = document.createElement("a");
+        const link = document.createElement("a");
         link.href = post.url;
         link.textContent = post.url;
         link.target = "_blank";
@@ -99,28 +102,26 @@ function renderPost(post) {
     results.appendChild(div);
 }
 
-// fullscreen open
 function openFullscreen(src, type) {
-    let overlay = document.createElement("div");
+    const overlay = document.createElement("div");
     overlay.className = "fullscreen-media";
 
     if (type === "img") {
-        let el = document.createElement("img");
-        el.src = src;
-        overlay.appendChild(el);
+        const img = document.createElement("img");
+        img.src = src;
+        overlay.appendChild(img);
     } else {
-        let el = document.createElement("video");
-        el.src = src;
-        el.controls = true;
-        el.autoplay = true;
-        overlay.appendChild(el);
+        const vid = document.createElement("video");
+        vid.src = src;
+        vid.controls = true;
+        vid.autoplay = true;
+        overlay.appendChild(vid);
     }
 
     overlay.onclick = () => overlay.remove();
     document.body.appendChild(overlay);
 }
 
-// Buttons
 loadBtn.onclick = loadPosts;
 
 clearBtn.onclick = () => {
@@ -132,5 +133,5 @@ copyBtn.onclick = () => {
     navigator.clipboard.writeText(input.value.trim());
 };
 
-// ZIP stub (unchanged)
-zipBtn.onclick = () => alert("ZIP download coming soon.");
+zipBtn.onclick = () =>
+    alert("ZIP downloads coming soon (after pagination update).");
