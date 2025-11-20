@@ -1,128 +1,136 @@
-function extractUsername(input) {
-    input = input.trim();
+const input = document.getElementById("input");
+const loadBtn = document.getElementById("loadBtn");
+const clearBtn = document.getElementById("clearBtn");
+const copyBtn = document.getElementById("copyBtn");
+const zipBtn = document.getElementById("zipBtn");
+const results = document.getElementById("results");
 
-    // Simple username
-    if (/^[A-Za-z0-9-_]+$/.test(input)) return input;
+const imgFilter = document.getElementById("imgFilter");
+const vidFilter = document.getElementById("vidFilter");
+const otherFilter = document.getElementById("otherFilter");
 
-    // /u/username/s/xxxx
-    let m = input.match(/\/u\/([A-Za-z0-9_-]+)/i);
-    if (m) return m[1];
+function extractUsername(text) {
 
-    // reddit.com/user/username
-    m = input.match(/\/user\/([A-Za-z0-9_-]+)/i);
-    if (m) return m[1];
+    // Shared URL like /u/name/s/guid
+    let match = text.match(/\/u\/([^\/]+)/i);
+    if (match) return match[1];
+
+    // Classic profile link
+    match = text.match(/reddit\.com\/user\/([^\/]+)/i);
+    if (match) return match[1];
+
+    // Direct /u/name/
+    match = text.match(/reddit\.com\/u\/([^\/]+)/i);
+    if (match) return match[1];
+
+    // Plain username
+    if (/^[A-Za-z0-9_-]{2,30}$/.test(text)) return text;
 
     return null;
 }
 
-async function loadPosts(reset = true) {
-    const input = document.getElementById('username');
-    const statusEl = document.getElementById('status');
-    const resultsEl = document.getElementById('results');
+async function loadPosts() {
+    results.innerHTML = "";
+    let raw = input.value.trim();
+    let username = extractUsername(raw);
 
-    const usernameRaw = input.value.trim();
-
-    if (reset) resultsEl.innerHTML = "";
-
-    if (!usernameRaw) {
-        statusEl.textContent = "No username or URL provided.";
+    if (!username) {
+        results.innerHTML = "<div class='post'>Invalid username or URL.</div>";
         return;
     }
 
-    let uname = extractUsername(usernameRaw);
-    if (!uname) {
-        statusEl.textContent = "Unable to parse username from URL.";
-        return;
-    }
-
-    statusEl.textContent = "Loading…";
-
-    const url = `https://www.reddit.com/user/${uname}/submitted.json`;
-
-    console.log("DEBUG REQUEST URL:", url);
+    let url = `https://www.reddit.com/user/${username}/submitted.json?raw_json=1`;
 
     try {
-        const r = await fetch(url, {
-            method: "GET",
-            headers: {
-                "Accept": "application/json",
-                "User-Agent": "Mozilla/5.0"
-            }
-        });
+        let req = await fetch(url);
+        if (!req.ok) throw new Error("Reddit blocked");
 
-        console.log("DEBUG FETCH RESPONSE:", r);
+        let data = await req.json();
+        let posts = data.data.children;
 
-        if (!r.ok) {
-            const text = await r.text();
-            console.error("DEBUG FULL ERROR RESPONSE:", text);
-
-            statusEl.textContent =
-                `Reddit error: HTTP ${r.status}\n` +
-                `Message: ${text.slice(0, 300)}\nCheck console for more.`;
-
+        if (!posts.length) {
+            results.innerHTML = "<div class='post'>No posts found.</div>";
             return;
         }
 
-        const data = await r.json();
-        console.log("DEBUG PARSED JSON:", data);
-
-        if (!data?.data?.children) {
-            statusEl.textContent = "Reddit returned no posts.";
-            return;
-        }
-
-        statusEl.textContent = "";
-        renderPosts(data.data.children);
+        posts.forEach(p => renderPost(p.data));
 
     } catch (err) {
-        console.error("DEBUG JS ERROR:", err);
-
-        statusEl.textContent =
-            "Javascript fetch error:\n" +
-            (err.message || err.toString()) +
-            "\n(Check console for full log.)";
+        results.innerHTML = `<div class="post">Error loading posts: ${err.message}</div>`;
     }
 }
 
-function renderPosts(posts) {
-    const resultsEl = document.getElementById('results');
+function renderPost(post) {
+    let div = document.createElement("div");
+    div.className = "post";
 
-    posts.forEach(item => {
-        const post = item.data;
+    let title = document.createElement("div");
+    title.textContent = post.title;
+    title.style.marginBottom = "12px";
 
-        const box = document.createElement("div");
-        box.className = "post";
+    div.appendChild(title);
 
-        box.innerHTML = `<div class="title">${post.title || "(no title)"}</div>`;
+    // IMAGES
+    if (imgFilter.checked && post.post_hint === "image" && post.url) {
+        let img = document.createElement("img");
+        img.src = post.url;
+        img.onclick = () => openFullscreen(img.src, "img");
+        div.appendChild(img);
+    }
 
-        if (post.is_video && post.media?.reddit_video?.fallback_url) {
-            const v = document.createElement("video");
-            v.controls = true;
-            v.src = post.media.reddit_video.fallback_url;
-            v.onclick = () => v.requestFullscreen();
-            box.appendChild(v);
-        } else if (post.url && /\.(jpg|jpeg|png|gif)$/i.test(post.url)) {
-            const img = document.createElement("img");
-            img.src = post.url;
-            img.onclick = () => img.requestFullscreen();
-            box.appendChild(img);
-        }
+    // VIDEOS
+    if (vidFilter.checked && post.is_video && post.media?.reddit_video) {
+        let vid = document.createElement("video");
+        vid.src = post.media.reddit_video.fallback_url;
+        vid.controls = true;
+        vid.onclick = () => openFullscreen(vid.src, "video");
+        div.appendChild(vid);
+    }
 
-        resultsEl.appendChild(box);
-    });
+    // OTHER CONTENT
+    if (otherFilter.checked && !post.is_video && !post.post_hint?.includes("image")) {
+        let link = document.createElement("a");
+        link.href = post.url;
+        link.textContent = post.url;
+        link.target = "_blank";
+        div.appendChild(link);
+    }
+
+    results.appendChild(div);
 }
 
-function copyURL() {
-    const v = document.getElementById("username").value;
-    navigator.clipboard.writeText(v);
+// fullscreen open
+function openFullscreen(src, type) {
+    let overlay = document.createElement("div");
+    overlay.className = "fullscreen-media";
+
+    if (type === "img") {
+        let el = document.createElement("img");
+        el.src = src;
+        overlay.appendChild(el);
+    } else {
+        let el = document.createElement("video");
+        el.src = src;
+        el.controls = true;
+        el.autoplay = true;
+        overlay.appendChild(el);
+    }
+
+    overlay.onclick = () => overlay.remove();
+    document.body.appendChild(overlay);
 }
 
-function clearAll() {
-    document.getElementById("username").value = "";
-    document.getElementById("results").innerHTML = "";
-    document.getElementById("status").textContent = "";
-}
+// Buttons
+loadBtn.onclick = loadPosts;
 
-function downloadZIP() {
-    alert("ZIP download coming in next update.");
-}
+clearBtn.onclick = () => {
+    input.value = "";
+    results.innerHTML = "";
+};
+
+copyBtn.onclick = () => {
+    navigator.clipboard.writeText(input.value.trim());
+};
+
+// ZIP stub (unchanged)
+zipBtn.onclick = () => alert("ZIP download coming soon.");
