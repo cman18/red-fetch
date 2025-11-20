@@ -1,198 +1,128 @@
-const usernameInput = document.getElementById("username");
-const loadBtn = document.getElementById("load-btn");
-const clearBtn = document.getElementById("clear-btn");
-const copyBtn = document.getElementById("copy-btn");
+function extractUsername(input) {
+    input = input.trim();
 
-const results = document.getElementById("results");
-const statusEl = document.getElementById("status");
-const scrollHint = document.getElementById("scroll-hint");
+    // Simple username
+    if (/^[A-Za-z0-9-_]+$/.test(input)) return input;
 
-const modal = document.getElementById("modal");
-const modalContent = document.getElementById("modal-content");
+    // /u/username/s/xxxx
+    let m = input.match(/\/u\/([A-Za-z0-9_-]+)/i);
+    if (m) return m[1];
 
-// Filters
-const fImages = document.getElementById("filter-images");
-const fVideos = document.getElementById("filter-videos");
-const fOther = document.getElementById("filter-other");
+    // reddit.com/user/username
+    m = input.match(/\/user\/([A-Za-z0-9_-]+)/i);
+    if (m) return m[1];
 
-let after = null;
-let loading = false;
-let activeUser = "";
-
-/* ===================================================
-   FIXED EXTRACTOR (handles ALL cases):
-   - /u/username/s/ABCDE
-   - /user/username
-   - /u/username
-   - /r/subreddit
-   - u/username
-   - r/subreddit
-   - plain usernames  <—— fixed
-   =================================================== */
-
-function extractUserOrSub(url) {
-    const raw = url.trim();
-
-    // A) Share URL
-    const share = raw.match(/reddit\.com\/u\/([^\/]+)\/s\//i);
-    if (share) return share[1];
-
-    // B) user/username
-    const user1 = raw.match(/reddit\.com\/user\/([^\/]+)/i);
-    if (user1) return user1[1];
-
-    // C) u/username
-    const user2 = raw.match(/reddit\.com\/u\/([^\/]+)/i);
-    if (user2) return user2[1];
-
-    // D) r/subreddit
-    const sub = raw.match(/reddit\.com\/r\/([^\/]+)/i);
-    if (sub) return sub[1];
-
-    // E) short forms
-    if (raw.startsWith("u/")) return raw.slice(2);
-    if (raw.startsWith("r/")) return raw.slice(2);
-
-    // F) Plain username
-    if (!raw.includes("/")) return raw;
-
-    // G) Final fallback
-    return raw.replace(/\//g, "") || raw;
+    return null;
 }
 
-/* ===================================================
-   LOAD POSTS
-   =================================================== */
-
 async function loadPosts(reset = true) {
-    if (loading) return;
-    loading = true;
-    statusEl.textContent = "Loading…";
+    const input = document.getElementById('username');
+    const statusEl = document.getElementById('status');
+    const resultsEl = document.getElementById('results');
 
-    if (reset) {
-        results.innerHTML = "";
-        after = null;
-        scrollHint.style.display = "none";
-    }
+    const usernameRaw = input.value.trim();
 
-    const raw = usernameInput.value.trim();
+    if (reset) resultsEl.innerHTML = "";
 
-    if (!raw) {
-        statusEl.textContent = "Enter a username or URL.";
-        loading = false;
+    if (!usernameRaw) {
+        statusEl.textContent = "No username or URL provided.";
         return;
     }
 
-    activeUser = extractUserOrSub(raw);
+    let uname = extractUsername(usernameRaw);
+    if (!uname) {
+        statusEl.textContent = "Unable to parse username from URL.";
+        return;
+    }
 
-    const isSub = raw.includes("/r/") || raw.includes("reddit.com/r/");
-    const endpoint = isSub
-        ? `https://www.reddit.com/r/${activeUser}/.json?limit=20${after ? "&after=" + after : ""}`
-        : `https://www.reddit.com/user/${activeUser}/submitted/.json?limit=20${after ? "&after=" + after : ""}`;
+    statusEl.textContent = "Loading…";
+
+    const url = `https://www.reddit.com/user/${uname}/submitted.json`;
+
+    console.log("DEBUG REQUEST URL:", url);
 
     try {
-        const res = await fetch(endpoint);
-        const data = await res.json();
+        const r = await fetch(url, {
+            method: "GET",
+            headers: {
+                "Accept": "application/json",
+                "User-Agent": "Mozilla/5.0"
+            }
+        });
 
-        if (!data.data) throw new Error("Invalid");
+        console.log("DEBUG FETCH RESPONSE:", r);
 
-        after = data.data.after;
-        const posts = data.data.children;
+        if (!r.ok) {
+            const text = await r.text();
+            console.error("DEBUG FULL ERROR RESPONSE:", text);
 
-        if (posts.length === 0 && reset) {
-            statusEl.textContent = "No posts found.";
-            loading = false;
+            statusEl.textContent =
+                `Reddit error: HTTP ${r.status}\n` +
+                `Message: ${text.slice(0, 300)}\nCheck console for more.`;
+
             return;
         }
 
-        renderPosts(posts);
+        const data = await r.json();
+        console.log("DEBUG PARSED JSON:", data);
 
-        statusEl.textContent = after ? "Scroll to load more…" : "Done.";
-        if (results.children.length > 0) scrollHint.style.display = "block";
+        if (!data?.data?.children) {
+            statusEl.textContent = "Reddit returned no posts.";
+            return;
+        }
 
-    } catch (e) {
-        statusEl.textContent = "Error loading posts.";
+        statusEl.textContent = "";
+        renderPosts(data.data.children);
+
+    } catch (err) {
+        console.error("DEBUG JS ERROR:", err);
+
+        statusEl.textContent =
+            "Javascript fetch error:\n" +
+            (err.message || err.toString()) +
+            "\n(Check console for full log.)";
     }
-
-    loading = false;
 }
 
-/* ===================================================
-   RENDER POSTS + CLICK TO ENLARGE
-   =================================================== */
-
 function renderPosts(posts) {
-    posts.forEach(p => {
-        const d = p.data;
+    const resultsEl = document.getElementById('results');
+
+    posts.forEach(item => {
+        const post = item.data;
 
         const box = document.createElement("div");
         box.className = "post";
 
-        let content = "";
+        box.innerHTML = `<div class="title">${post.title || "(no title)"}</div>`;
 
-        if (d.post_hint === "image" && fImages.checked) {
-            content = `<img src="${d.url}" loading="lazy">`;
+        if (post.is_video && post.media?.reddit_video?.fallback_url) {
+            const v = document.createElement("video");
+            v.controls = true;
+            v.src = post.media.reddit_video.fallback_url;
+            v.onclick = () => v.requestFullscreen();
+            box.appendChild(v);
+        } else if (post.url && /\.(jpg|jpeg|png|gif)$/i.test(post.url)) {
+            const img = document.createElement("img");
+            img.src = post.url;
+            img.onclick = () => img.requestFullscreen();
+            box.appendChild(img);
         }
-        else if (d.is_video && fVideos.checked) {
-            content = `<video preload="none"><source src="${d.media.reddit_video.fallback_url}"></video>`;
-        }
-        else if (fOther.checked) {
-            content = `<a href="${d.url}" target="_blank">${d.url}</a>`;
-        }
 
-        box.innerHTML = content;
-        results.appendChild(box);
-
-        // Modal enlarge
-        box.onclick = () => {
-            modal.style.display = "flex";
-
-            if (d.post_hint === "image") {
-                modalContent.innerHTML = `<img src="${d.url}">`;
-            }
-            else if (d.is_video) {
-                modalContent.innerHTML = `
-                    <video controls autoplay>
-                        <source src="${d.media.reddit_video.fallback_url}">
-                    </video>`;
-            }
-        };
+        resultsEl.appendChild(box);
     });
 }
 
-// Close modal
-modal.onclick = () => {
-    modal.style.display = "none";
-    modalContent.innerHTML = "";
-};
+function copyURL() {
+    const v = document.getElementById("username").value;
+    navigator.clipboard.writeText(v);
+}
 
-/* ===================================================
-   BUTTONS
-   =================================================== */
+function clearAll() {
+    document.getElementById("username").value = "";
+    document.getElementById("results").innerHTML = "";
+    document.getElementById("status").textContent = "";
+}
 
-loadBtn.onclick = () => loadPosts(true);
-
-clearBtn.onclick = () => {
-    usernameInput.value = "";
-    results.innerHTML = "";
-    statusEl.textContent = "Cleared.";
-    scrollHint.style.display = "none";
-    after = null;
-};
-
-copyBtn.onclick = () => {
-    navigator.clipboard.writeText(usernameInput.value.trim());
-    statusEl.textContent = "URL copied.";
-};
-
-/* ===================================================
-   INFINITE SCROLL
-   =================================================== */
-
-window.addEventListener("scroll", () => {
-    if (loading) return;
-    if (!after) return;
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
-        loadPosts(false);
-    }
-});
+function downloadZIP() {
+    alert("ZIP download coming in next update.");
+}
