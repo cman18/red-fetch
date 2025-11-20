@@ -64,7 +64,6 @@ button:hover {
     gap: 6px;
 }
 
-/* Two-column grid */
 .grid-results {
     max-width: 1000px;
     margin: 30px auto;
@@ -91,7 +90,6 @@ button:hover {
     margin: 10px auto;
 }
 
-/* Fullscreen modal */
 .fullscreen-media {
     position: fixed;
     inset: 0;
