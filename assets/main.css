@@ -64,9 +64,7 @@ button:hover {
     gap: 6px;
 }
 
-/* ---------------------------------
-   ⭐ TWO-COLUMN GRID RESTORED ⭐
-----------------------------------*/
+/* Two-column grid */
 .grid-results {
     max-width: 1000px;
     margin: 30px auto;
@@ -82,10 +80,6 @@ button:hover {
     border: 1px solid #333;
 }
 
-/* ---------------------------------------------
-   ⭐ SMALLER FEED MEDIA (autofit for grid)
-   ⭐ Centered
-----------------------------------------------*/
 .post img,
 .post video {
     width: 100%;
@@ -97,7 +91,7 @@ button:hover {
     margin: 10px auto;
 }
 
-/* Fullscreen unchanged */
+/* Fullscreen modal */
 .fullscreen-media {
     position: fixed;
     inset: 0;
