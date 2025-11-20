@@ -71,25 +71,46 @@ async function fetchRedgifsMP4(url) {
     if (!idMatch) return null;
 
     let id = idMatch[1];
-    let apiURL = "https://api.redgifs.com/v2/gifs/" + id;
 
+    // Try official API first (may fail)
     try {
+        let apiURL = "https://api.redgifs.com/v2/gifs/" + id;
         let res = await fetch(apiURL);
-        if (!res.ok) return null;
 
-        let data = await res.json();
-        if (!data || !data.gif || !data.gif.urls) return null;
-
-        return (
-            data.gif.urls.hd ||
-            data.gif.urls.sd ||
-            data.gif.urls.mobile ||
-            null
-        );
-
+        if (res.ok) {
+            let data = await res.json();
+            if (data?.gif?.urls) {
+                return (
+                    data.gif.urls.hd ||
+                    data.gif.urls.sd ||
+                    data.gif.urls.mobile ||
+                    null
+                );
+            }
+        }
     } catch (e) {
-        return null;
+        // API failed, we will use fallback
     }
+
+    // ---------------------------------------
+    // FALLBACK STATIC MP4 URL (works for most)
+    // ---------------------------------------
+    let fallback = `https://thumbs4.redgifs.com/${id}.mp4`;
+
+    // Verify fallback actually loads
+    try {
+        let test = await fetch(fallback, { method: "HEAD" });
+        if (test.ok) return fallback;
+    } catch (e) {}
+
+    // Try secondary host
+    fallback = `https://thumbs2.redgifs.com/${id}.mp4`;
+    try {
+        let test2 = await fetch(fallback, { method: "HEAD" });
+        if (test2.ok) return fallback;
+    } catch (e) {}
+
+    return null;
 }
 
 // ============================================================
