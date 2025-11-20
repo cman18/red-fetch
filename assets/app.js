@@ -59,6 +59,22 @@ async function loadPosts() {
     }
 }
 
+/* Detect GIF link */
+function isGif(url) {
+    return (
+        url.endsWith(".gif") ||
+        url.endsWith(".gifv") ||
+        url.includes("imgur.com") && url.match(/\.gifv?$/) ||
+        url.includes("gfycat")
+    );
+}
+
+function convertGifToMP4(url) {
+    if (url.endsWith(".gifv")) return url.replace(".gifv", ".mp4");
+    if (url.endsWith(".gif")) return url.replace(".gif", ".mp4");
+    return url;
+}
+
 function renderPost(post) {
     let div = document.createElement("div");
     div.className = "post";
@@ -68,25 +84,66 @@ function renderPost(post) {
     title.style.marginBottom = "12px";
     div.appendChild(title);
 
-    if (imgFilter.checked && post.post_hint === "image" && post.url) {
+    let url = post.url || "";
+
+    /* ------------------------------------------
+       ⭐ GIF SUPPORT
+    -------------------------------------------*/
+    if (imgFilter.checked && isGif(url)) {
+        let mp4 = convertGifToMP4(url);
+
+        let vid = document.createElement("video");
+        vid.src = mp4;
+        vid.loop = true;
+        vid.muted = false;
+        vid.controls = false;
+
+        // hover autoplay
+        vid.onmouseenter = () => vid.play();
+        vid.onmouseleave = () => vid.pause();
+
+        // click enlarge
+        vid.onclick = () => openFullscreen(mp4, "video");
+
+        div.appendChild(vid);
+        results.appendChild(div);
+        return;
+    }
+
+    /* ------------------------------------------
+       ⭐ NORMAL IMAGES
+    -------------------------------------------*/
+    if (imgFilter.checked && post.post_hint === "image" && url) {
         const img = document.createElement("img");
-        img.src = post.url;
+        img.src = url;
         img.onclick = () => openFullscreen(img.src, "img");
         div.appendChild(img);
     }
 
+    /* ------------------------------------------
+       ⭐ NORMAL VIDEOS (with sound)
+    -------------------------------------------*/
     if (vidFilter.checked && post.is_video && post.media?.reddit_video?.fallback_url) {
         const vid = document.createElement("video");
-        vid.controls = true;
         vid.src = post.media.reddit_video.fallback_url;
+        vid.controls = true;
+        vid.muted = false;   // allow sound
         vid.onclick = () => openFullscreen(vid.src, "video");
+
+        // hover autoplay
+        vid.onmouseenter = () => vid.play();
+        vid.onmouseleave = () => vid.pause();
+
         div.appendChild(vid);
     }
 
-    if (otherFilter.checked && !post.is_video && !post.post_hint?.includes("image")) {
+    /* ------------------------------------------
+       ⭐ OTHER LINKS
+    -------------------------------------------*/
+    if (otherFilter.checked && !post.is_video && !post.post_hint?.includes("image") && !isGif(url)) {
         const link = document.createElement("a");
-        link.href = post.url;
-        link.textContent = post.url;
+        link.href = url;
+        link.textContent = url;
         link.target = "_blank";
         div.appendChild(link);
     }
