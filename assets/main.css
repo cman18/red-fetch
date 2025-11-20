@@ -22,7 +22,7 @@ body {
     border-radius: 14px;
 }
 
-/* Rows above the gallery */
+/* Rows */
 .input-row, .action-row, .filters-row {
     display: flex;
     align-items: center;
@@ -68,7 +68,7 @@ button:hover {
     gap: 18px;
 }
 
-/* Post boxes */
+/* Post container */
 .post {
     background: #161616;
     padding: 18px;
@@ -88,7 +88,7 @@ button:hover {
     margin: 10px auto;
 }
 
-/* URL under each post */
+/* URL under post */
 .post-url {
     margin-top: 8px;
     font-size: 13px;
@@ -134,7 +134,7 @@ button:hover {
     right: 30px;
 }
 
-/* Main-page gallery arrows (over thumbnails) */
+/* Main-page gallery arrows (FIXED with z-index) */
 .gallery-arrow-main {
     position: absolute;
     top: 50%;
@@ -146,6 +146,7 @@ button:hover {
     font-size: 22px;
     user-select: none;
     border-radius: 6px;
+    z-index: 30; /* <-- REQUIRED FIX */
 }
 
 .gallery-arrow-main-left {
@@ -156,7 +157,7 @@ button:hover {
     right: 6px;
 }
 
-/* Scroll to top button */
+/* Scroll-to-top button */
 #scrollTopBtn {
     position: fixed;
     bottom: 25px;
