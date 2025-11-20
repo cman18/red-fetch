@@ -17,7 +17,6 @@ const imgFilter = document.getElementById("imgFilter");
 const vidFilter = document.getElementById("vidFilter");
 const otherFilter = document.getElementById("otherFilter");
 
-
 // ============================================================
 // USERNAME EXTRACTION
 // ============================================================
@@ -38,7 +37,6 @@ function extractUsername(text) {
 
     return null;
 }
-
 
 // ============================================================
 // GIF DETECTION AND GIFV/IMGUR/GFYCAT HANDLING
@@ -64,7 +62,6 @@ function convertGifToMP4(url) {
     }
     return url;
 }
-
 
 // ============================================================
 // REDGIFS SUPPORT
@@ -95,15 +92,13 @@ async function fetchRedgifsMP4(url) {
     }
 }
 
-
 // ============================================================
 // GLOBAL MEDIA NAVIGATION (ACROSS POSTS + GALLERIES)
 // ============================================================
-let postMediaList = [];     // Flat list of all media from all posts
-let postMediaIndex = {};    // map postId -> start index in postMediaList
-let currentIndex = 0;       // current index for gallery arrow navigation
+let postMediaList = [];
+let postMediaIndex = {};
+let currentIndex = 0;
 let totalMediaCount = 0;
-
 
 // ============================================================
 // LOAD POSTS
@@ -137,7 +132,6 @@ async function loadPosts() {
             return;
         }
 
-        // Render posts sequentially
         for (let p of posts) {
             await renderPost(p.data);
         }
@@ -148,17 +142,14 @@ async function loadPosts() {
         results.innerHTML = `<div class="post">Error loading posts: ${err.message}</div>`;
     }
 }
-//
-//
+// ============================================================
 // RENDER POST (images, videos, galleries, redgifs, gifs)
-// This builds per-post UI elements AND feeds into the global media list
-//
-//
+// ============================================================
 async function renderPost(post) {
+
     let div = document.createElement("div");
     div.className = "post";
 
-    // Post title
     let title = document.createElement("div");
     title.textContent = post.title;
     title.style.marginBottom = "12px";
@@ -167,16 +158,14 @@ async function renderPost(post) {
     let url = post.url || "";
     let postId = post.id;
 
-    // Track where this post's media begins in postMediaList
     postMediaIndex[postId] = postMediaList.length;
+    let mediaItems = [];
 
-    // STORE ALL MEDIA FOR CROSS POST NAVIGATION
-    let mediaItems = []; // list of media objects { type, src, postId }
-
-    //
-    // 1. GALLERY SUPPORT
-    //
+    // ============================================================
+    // GALLERY SUPPORT
+    // ============================================================
     if (post.is_gallery && post.gallery_data && imgFilter.checked) {
+
         let items = post.gallery_data.items;
         let images = items.map(i =>
             post.media_metadata[i.media_id].s.u.replace(/&amp;/g, "&")
@@ -190,13 +179,13 @@ async function renderPost(post) {
             });
         });
 
-        addGalleryToDOM(div, mediaItems, post); // draws preview + arrows
-        return; // STOP HERE (we handled everything)
+        addGalleryToDOM(div, mediaItems, post);
+        return;
     }
 
-    //
-    // 2. REDGIFS SUPPORT
-    //
+    // ============================================================
+    // REDGIFS SUPPORT
+    // ============================================================
     if (imgFilter.checked && url.includes("redgifs.com")) {
         let mp4 = await fetchRedgifsMP4(url);
         if (mp4) {
@@ -211,9 +200,9 @@ async function renderPost(post) {
         }
     }
 
-    //
-    // 3. GIF SUPPORT (imgur gifv, reddit gif, gif)
-    //
+    // ============================================================
+    // GIF SUPPORT
+    // ============================================================
     if (imgFilter.checked && isGif(url)) {
         let mp4 = convertGifToMP4(url);
 
@@ -227,10 +216,11 @@ async function renderPost(post) {
         return;
     }
 
-    //
-    // 4. NORMAL IMAGE
-    //
+    // ============================================================
+    // NORMAL IMAGE
+    // ============================================================
     if (imgFilter.checked && post.post_hint === "image" && url) {
+
         mediaItems.push({
             type: "image",
             src: url,
@@ -241,10 +231,11 @@ async function renderPost(post) {
         return;
     }
 
-    //
-    // 5. NORMAL VIDEO
-    //
+    // ============================================================
+    // NORMAL VIDEO
+    // ============================================================
     if (vidFilter.checked && post.is_video && post.media?.reddit_video?.fallback_url) {
+
         let vsrc = post.media.reddit_video.fallback_url;
 
         mediaItems.push({
@@ -257,29 +248,26 @@ async function renderPost(post) {
         return;
     }
 
-    //
-    // 6. OTHER LINKS
-    //
+    // ============================================================
+    // OTHER LINKS
+    // ============================================================
     if (otherFilter.checked) {
         let link = document.createElement("a");
         link.href = url;
         link.textContent = url;
         link.target = "_blank";
         div.appendChild(link);
+
         results.appendChild(div);
         return;
     }
 
-    //
-    // Add every media item to the master list
-    //
     mediaItems.forEach(item => postMediaList.push(item));
 }
 
-
-//
-// ADD SINGLE IMAGE OR VIDEO TO DOM
-//
+// ============================================================
+// ADD SINGLE MEDIA (image, gif, video) TO DOM
+// ============================================================
 function addSingleMediaToDOM(div, src, type, post) {
 
     let el;
@@ -303,13 +291,10 @@ function addSingleMediaToDOM(div, src, type, post) {
         el.src = src;
     }
 
-    // Click to fullscreen
     el.onclick = () => openFullscreen(src, type === "image" ? "img" : "video");
 
-    // Inject media
     div.appendChild(el);
 
-    // ADD URL UNDER POST
     let urlLine = document.createElement("div");
     urlLine.className = "post-url";
     urlLine.textContent = post.url;
@@ -317,7 +302,6 @@ function addSingleMediaToDOM(div, src, type, post) {
 
     results.appendChild(div);
 
-    // Add to global track
     postMediaList.push({
         type: type,
         src: src,
@@ -325,16 +309,13 @@ function addSingleMediaToDOM(div, src, type, post) {
     });
 }
 
-
-//
-// ADD GALLERY PREVIEW + ARROWS TO DOM
-//
+// ============================================================
+// ADD GALLERY PREVIEW + ARROWS TO MAIN PAGE
+// ============================================================
 function addGalleryToDOM(div, mediaItems, post) {
 
-    // Add to global track
     mediaItems.forEach(item => postMediaList.push(item));
 
-    // Show first thumbnail
     let current = 0;
 
     let img = document.createElement("img");
@@ -344,24 +325,20 @@ function addGalleryToDOM(div, mediaItems, post) {
 
     div.appendChild(img);
 
-    //
-    // LEFT ARROW
-    //
     let left = document.createElement("div");
     left.className = "gallery-arrow-main gallery-arrow-main-left";
     left.textContent = "<";
+    left.style.zIndex = "9999";
+
+    let right = document.createElement("div");
+    right.className = "gallery-arrow-main gallery-arrow-main-right";
+    right.textContent = ">";
+    right.style.zIndex = "9999";
 
     left.onclick = (e) => {
         e.stopPropagation();
         goGalleryStep(-1, img, mediaItems, post.id);
     };
-
-    //
-    // RIGHT ARROW
-    //
-    let right = document.createElement("div");
-    right.className = "gallery-arrow-main gallery-arrow-main-right";
-    right.textContent = ">";
 
     right.onclick = (e) => {
         e.stopPropagation();
@@ -371,7 +348,6 @@ function addGalleryToDOM(div, mediaItems, post) {
     div.appendChild(left);
     div.appendChild(right);
 
-    // URL under post
     let urlLine = document.createElement("div");
     urlLine.className = "post-url";
     urlLine.textContent = post.url;
@@ -379,38 +355,29 @@ function addGalleryToDOM(div, mediaItems, post) {
 
     results.appendChild(div);
 }
-//
-//
-// CROSS-POST GALLERY NAVIGATION (MAIN PAGE ARROWS)
-//
-//
-
-// Move gallery preview image left or right
+// ============================================================
+// GALLERY NAVIGATION ON MAIN PAGE (ARROWS IN GRID)
+// ============================================================
 function goGalleryStep(direction, imgElement, mediaItems, postId) {
 
-    // Find index of first media of this post in global list
     let startIndex = postMediaIndex[postId];
+    if (startIndex === undefined) return;
 
-    // Find the current index of the displayed media within global list
     let currentSrc = imgElement.src;
-    let globalIdx = postMediaList.findIndex(m => m.src === currentSrc);
 
+    let globalIdx = postMediaList.findIndex(m => m.src === currentSrc);
     if (globalIdx === -1) globalIdx = startIndex;
 
-    // Move
     let nextIdx = globalIdx + direction;
 
-    // Stop at boundaries
     if (nextIdx < 0 || nextIdx >= postMediaList.length) return;
 
-    // Set new preview src
     imgElement.src = postMediaList[nextIdx].src;
 }
 
-
-//
+// ============================================================
 // FULLSCREEN GALLERY VIEWER
-//
+// ============================================================
 function openFullscreenGallery(mediaItems, index) {
 
     const overlay = document.createElement("div");
@@ -418,23 +385,9 @@ function openFullscreenGallery(mediaItems, index) {
 
     let current = index;
 
-    let media = mediaItems[current];
-    let el;
-
-    if (media.type === "image") {
-        el = document.createElement("img");
-        el.src = media.src;
-    }
-    else {
-        el = document.createElement("video");
-        el.src = media.src;
-        el.controls = true;
-        el.autoplay = true;
-    }
-
+    let el = buildFullscreenElement(mediaItems[current]);
     overlay.appendChild(el);
 
-    // Left arrow
     let left = document.createElement("div");
     left.className = "gallery-arrow gallery-arrow-left";
     left.textContent = "<";
@@ -442,14 +395,10 @@ function openFullscreenGallery(mediaItems, index) {
     left.onclick = (e) => {
         e.stopPropagation();
         current = current - 1;
-
-        if (current < 0)
-            current = mediaItems.length - 1;
-
+        if (current < 0) current = mediaItems.length - 1;
         updateFullscreenMedia(overlay, mediaItems[current]);
     };
 
-    // Right arrow
     let right = document.createElement("div");
     right.className = "gallery-arrow gallery-arrow-right";
     right.textContent = ">";
@@ -467,26 +416,34 @@ function openFullscreenGallery(mediaItems, index) {
     document.body.appendChild(overlay);
 }
 
-
-//
-// Update fullscreen viewer element
-//
-function updateFullscreenMedia(overlay, media) {
-
-    overlay.innerHTML = "";
+// ============================================================
+// BUILD FULLSCREEN ELEMENT
+// ============================================================
+function buildFullscreenElement(media) {
 
     let el;
+
     if (media.type === "image") {
         el = document.createElement("img");
         el.src = media.src;
-    }
-    else {
+    } else {
         el = document.createElement("video");
         el.src = media.src;
         el.controls = true;
         el.autoplay = true;
     }
 
+    return el;
+}
+
+// ============================================================
+// UPDATE FULLSCREEN MEDIA WHEN ARROWS ARE PRESSED
+// ============================================================
+function updateFullscreenMedia(overlay, media) {
+
+    overlay.innerHTML = "";
+
+    let el = buildFullscreenElement(media);
     overlay.appendChild(el);
 
     let left = document.createElement("div");
@@ -502,24 +459,19 @@ function updateFullscreenMedia(overlay, media) {
     left.onclick = (e) => {
         e.stopPropagation();
         let idx = postMediaList.findIndex(m => m.src === media.src);
-        if (idx > 0) {
-            updateFullscreenMedia(overlay, postMediaList[idx - 1]);
-        }
+        if (idx > 0) updateFullscreenMedia(overlay, postMediaList[idx - 1]);
     };
 
     right.onclick = (e) => {
         e.stopPropagation();
         let idx = postMediaList.findIndex(m => m.src === media.src);
-        if (idx < postMediaList.length - 1) {
+        if (idx < postMediaList.length - 1)
             updateFullscreenMedia(overlay, postMediaList[idx + 1]);
-        }
     };
 }
-//
-//
+// ============================================================
 // FULLSCREEN FOR SINGLE IMAGE OR VIDEO
-//
-//
+// ============================================================
 function openFullscreen(src, type) {
 
     const overlay = document.createElement("div");
@@ -544,11 +496,9 @@ function openFullscreen(src, type) {
     document.body.appendChild(overlay);
 }
 
-//
-//
+// ============================================================
 // SCROLL TO TOP BUTTON
-//
-//
+// ============================================================
 scrollTopBtn.onclick = () => {
     window.scrollTo({
         top: 0,
@@ -556,16 +506,11 @@ scrollTopBtn.onclick = () => {
     });
 };
 
-//
-//
-// BUTTONS
-//
-//
-
-// Load posts
+// ============================================================
+// BUTTON HANDLERS
+// ============================================================
 loadBtn.onclick = loadPosts;
 
-// Clear
 clearBtn.onclick = () => {
     input.value = "";
     results.innerHTML = "";
@@ -575,12 +520,10 @@ clearBtn.onclick = () => {
     totalMediaCount = 0;
 };
 
-// Copy URL
 copyBtn.onclick = () => {
     navigator.clipboard.writeText(input.value.trim());
 };
 
-// ZIP (placeholder)
 zipBtn.onclick = () => {
-    alert("ZIP creation coming next");
+    alert("ZIP downloads coming soon");
 };
