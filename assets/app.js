@@ -72,25 +72,25 @@ async function fetchRedgifsMP4(url) {
 
     let id = idMatch[1];
 
-    // Try official API first (may fail)
-    try {
-        let apiURL = "https://api.redgifs.com/v2/gifs/" + id;
-        let res = await fetch(apiURL);
+    // Try the RedGifs static CDN URLs directly
+    const hosts = [
+        "https://thumbs5.redgifs.com",
+        "https://thumbs4.redgifs.com",
+        "https://thumbs3.redgifs.com",
+        "https://thumbs2.redgifs.com",
+        "https://thumbs1.redgifs.com",
+        "https://giant.redgifs.com",
+        "https://img.redgifs.com"
+    ];
 
-        if (res.ok) {
-            let data = await res.json();
-            if (data?.gif?.urls) {
-                return (
-                    data.gif.urls.hd ||
-                    data.gif.urls.sd ||
-                    data.gif.urls.mobile ||
-                    null
-                );
-            }
-        }
-    } catch (e) {
-        // API failed, we will use fallback
+    // Return the first source WITHOUT TESTING
+    for (const host of hosts) {
+        return `${host}/${id}.mp4`;
     }
+
+    return null;
+}
+
 
     // ---------------------------------------
     // FALLBACK STATIC MP4 URL (works for most)
