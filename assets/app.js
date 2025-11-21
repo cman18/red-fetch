@@ -490,3 +490,50 @@ copyBtn.onclick = () => {
 zipBtn.onclick = () => {
     alert("ZIP downloads coming soon");
 };
+
+
+// ============================================================
+// FULLSCREEN SWIPE SUPPORT (Left/Right)
+// ============================================================
+
+let touchStartX = 0;
+let touchEndX = 0;
+
+function handleSwipe() {
+    const distance = touchEndX - touchStartX;
+
+    // minimum distance to count as swipe
+    if (Math.abs(distance) < 50) return;
+
+    // find currently displayed media
+    const overlay = document.querySelector(".fullscreen-media");
+    if (!overlay) return;
+
+    const mediaEl = overlay.querySelector("img, video");
+    if (!mediaEl) return;
+
+    const currentSrc = mediaEl.src;
+    const idx = postMediaList.findIndex(m => m.src === currentSrc);
+
+    if (idx === -1) return;
+
+    if (distance < 0 && idx < postMediaList.length - 1) {
+        // swipe left -> next
+        updateFullscreenMedia(overlay, postMediaList[idx + 1]);
+    }
+    else if (distance > 0 && idx > 0) {
+        // swipe right -> previous
+        updateFullscreenMedia(overlay, postMediaList[idx - 1]);
+    }
+}
+
+document.addEventListener("touchstart", function (e) {
+    if (!document.querySelector(".fullscreen-media")) return;
+    touchStartX = e.changedTouches[0].screenX;
+});
+
+document.addEventListener("touchend", function (e) {
+    if (!document.querySelector(".fullscreen-media")) return;
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+});
