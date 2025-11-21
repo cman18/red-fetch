@@ -1,6 +1,5 @@
 // ============================================================
-// RedPull 007p app.js
-// PART 1 OF 4
+// RedPull 007p — FULL CLEAN VERSION
 // ============================================================
 
 // DOM elements
@@ -39,7 +38,7 @@ function extractUsername(text) {
 }
 
 // ============================================================
-// GIF DETECTION AND GIFV/IMGUR/GFYCAT HANDLING
+// GIF DETECTION & CONVERSION
 // ============================================================
 function isGif(url) {
     if (!url) return false;
@@ -64,7 +63,7 @@ function convertGifToMP4(url) {
 }
 
 // ============================================================
-// REDGIFS SUPPORT
+// REDGIFS — SCRAPER CDN FALLBACK (NO FETCH)
 // ============================================================
 async function fetchRedgifsMP4(url) {
     let idMatch = url.match(/\/([A-Za-z0-9]+)$/);
@@ -72,7 +71,6 @@ async function fetchRedgifsMP4(url) {
 
     let id = idMatch[1];
 
-    // Try the RedGifs static CDN URLs directly
     const hosts = [
         "https://thumbs5.redgifs.com",
         "https://thumbs4.redgifs.com",
@@ -83,7 +81,6 @@ async function fetchRedgifsMP4(url) {
         "https://img.redgifs.com"
     ];
 
-    // Return the first source WITHOUT TESTING
     for (const host of hosts) {
         return `${host}/${id}.mp4`;
     }
@@ -91,9 +88,8 @@ async function fetchRedgifsMP4(url) {
     return null;
 }
 
-
 // ============================================================
-// GLOBAL MEDIA NAVIGATION (ACROSS POSTS + GALLERIES)
+// GLOBAL MEDIA NAVIGATION
 // ============================================================
 let postMediaList = [];
 let postMediaIndex = {};
@@ -142,8 +138,9 @@ async function loadPosts() {
         results.innerHTML = `<div class="post">Error loading posts: ${err.message}</div>`;
     }
 }
+
 // ============================================================
-// RENDER POST (images, videos, galleries, redgifs, gifs)
+// RENDER POST
 // ============================================================
 async function renderPost(post) {
 
@@ -161,9 +158,7 @@ async function renderPost(post) {
     postMediaIndex[postId] = postMediaList.length;
     let mediaItems = [];
 
-    // ============================================================
-    // GALLERY SUPPORT
-    // ============================================================
+    // GALLERY
     if (post.is_gallery && post.gallery_data && imgFilter.checked) {
 
         let items = post.gallery_data.items;
@@ -172,85 +167,52 @@ async function renderPost(post) {
         );
 
         images.forEach(src => {
-            mediaItems.push({
-                type: "image",
-                src: src,
-                postId: postId
-            });
+            mediaItems.push({ type: "image", src: src, postId: postId });
         });
 
         addGalleryToDOM(div, mediaItems, post);
         return;
     }
 
-    // ============================================================
-    // REDGIFS SUPPORT
-    // ============================================================
+    // REDGIFS
     if (imgFilter.checked && url.includes("redgifs.com")) {
         let mp4 = await fetchRedgifsMP4(url);
-        if (mp4) {
-            mediaItems.push({
-                type: "gif",
-                src: mp4,
-                postId: postId
-            });
 
+        if (mp4) {
+            mediaItems.push({ type: "gif", src: mp4, postId: postId });
             addSingleMediaToDOM(div, mp4, "gif", post);
             return;
         }
     }
 
-    // ============================================================
-    // GIF SUPPORT
-    // ============================================================
+    // GIF/GIFV
     if (imgFilter.checked && isGif(url)) {
         let mp4 = convertGifToMP4(url);
 
-        mediaItems.push({
-            type: "gif",
-            src: mp4,
-            postId: postId
-        });
-
+        mediaItems.push({ type: "gif", src: mp4, postId: postId });
         addSingleMediaToDOM(div, mp4, "gif", post);
         return;
     }
 
-    // ============================================================
-    // NORMAL IMAGE
-    // ============================================================
+    // IMAGE
     if (imgFilter.checked && post.post_hint === "image" && url) {
 
-        mediaItems.push({
-            type: "image",
-            src: url,
-            postId: postId
-        });
-
+        mediaItems.push({ type: "image", src: url, postId: postId });
         addSingleMediaToDOM(div, url, "image", post);
         return;
     }
 
-    // ============================================================
-    // NORMAL VIDEO
-    // ============================================================
+    // VIDEO
     if (vidFilter.checked && post.is_video && post.media?.reddit_video?.fallback_url) {
 
         let vsrc = post.media.reddit_video.fallback_url;
 
-        mediaItems.push({
-            type: "video",
-            src: vsrc,
-            postId: postId
-        });
-
+        mediaItems.push({ type: "video", src: vsrc, postId: postId });
         addSingleMediaToDOM(div, vsrc, "video", post);
         return;
     }
 
-    // ============================================================
     // OTHER LINKS
-    // ============================================================
     if (otherFilter.checked) {
         let link = document.createElement("a");
         link.href = url;
@@ -266,7 +228,7 @@ async function renderPost(post) {
 }
 
 // ============================================================
-// ADD SINGLE MEDIA (image, gif, video) TO DOM
+// ADD SINGLE MEDIA
 // ============================================================
 function addSingleMediaToDOM(div, src, type, post) {
 
@@ -284,7 +246,6 @@ function addSingleMediaToDOM(div, src, type, post) {
         el = document.createElement("video");
         el.src = src;
         el.controls = true;
-        el.muted = false;
     }
     else {
         el = document.createElement("img");
@@ -310,7 +271,7 @@ function addSingleMediaToDOM(div, src, type, post) {
 }
 
 // ============================================================
-// ADD GALLERY PREVIEW + ARROWS TO MAIN PAGE
+// ADD GALLERY WITH ARROWS
 // ============================================================
 function addGalleryToDOM(div, mediaItems, post) {
 
@@ -355,8 +316,9 @@ function addGalleryToDOM(div, mediaItems, post) {
 
     results.appendChild(div);
 }
+
 // ============================================================
-// GALLERY NAVIGATION ON MAIN PAGE (ARROWS IN GRID)
+// MAIN PAGE GALLERY ARROWS
 // ============================================================
 function goGalleryStep(direction, imgElement, mediaItems, postId) {
 
@@ -437,7 +399,7 @@ function buildFullscreenElement(media) {
 }
 
 // ============================================================
-// UPDATE FULLSCREEN MEDIA WHEN ARROWS ARE PRESSED
+// UPDATE FULLSCREEN MEDIA
 // ============================================================
 function updateFullscreenMedia(overlay, media) {
 
@@ -469,8 +431,9 @@ function updateFullscreenMedia(overlay, media) {
             updateFullscreenMedia(overlay, postMediaList[idx + 1]);
     };
 }
+
 // ============================================================
-// FULLSCREEN FOR SINGLE IMAGE OR VIDEO
+// FULLSCREEN SINGLE IMAGE/VIDEO
 // ============================================================
 function openFullscreen(src, type) {
 
@@ -497,7 +460,7 @@ function openFullscreen(src, type) {
 }
 
 // ============================================================
-// SCROLL TO TOP BUTTON
+// SCROLL TO TOP
 // ============================================================
 scrollTopBtn.onclick = () => {
     window.scrollTo({
