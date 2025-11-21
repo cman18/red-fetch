@@ -92,27 +92,6 @@ async function fetchRedgifsMP4(url) {
 }
 
 
-    // ---------------------------------------
-    // FALLBACK STATIC MP4 URL (works for most)
-    // ---------------------------------------
-    let fallback = `https://thumbs4.redgifs.com/${id}.mp4`;
-
-    // Verify fallback actually loads
-    try {
-        let test = await fetch(fallback, { method: "HEAD" });
-        if (test.ok) return fallback;
-    } catch (e) {}
-
-    // Try secondary host
-    fallback = `https://thumbs2.redgifs.com/${id}.mp4`;
-    try {
-        let test2 = await fetch(fallback, { method: "HEAD" });
-        if (test2.ok) return fallback;
-    } catch (e) {}
-
-    return null;
-}
-
 // ============================================================
 // GLOBAL MEDIA NAVIGATION (ACROSS POSTS + GALLERIES)
 // ============================================================
