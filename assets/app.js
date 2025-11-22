@@ -69,29 +69,17 @@ async function fetchRedgifsMP4(url) {
     let idMatch = url.match(/\/([A-Za-z0-9]+)$/);
     if (!idMatch) return null;
 
-    let slug = idMatch[1];
+    let id = idMatch[1];
 
-    const hosts = [
-        "https://thumbs1.redgifs.com",
-        "https://thumbs2.redgifs.com",
-        "https://thumbs3.redgifs.com",
-        "https://thumbs4.redgifs.com",
-        "https://thumbs5.redgifs.com"
-    ];
+    try {
+        const res = await fetch(`https://red.coffeemanhou.workers.dev/redgifs?id=${id}`);
+        const data = await res.json();
 
-    for (const host of hosts) {
-        const testUrl = `${host}/${slug}.mp4`;
+        return data.mp4 || null;
 
-        try {
-            const res = await fetch(testUrl, { method: "GET" });
-
-            if (res.ok && res.headers.get("content-type")?.includes("video")) {
-                return testUrl;
-            }
-        } catch (e) {}
+    } catch (e) {
+        return null;
     }
-
-    return null;
 }
 
 // ============================================================
