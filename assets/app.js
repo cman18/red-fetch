@@ -1,5 +1,5 @@
 // ============================================================
-// RedPull 007p — FULL CLEAN VERSION
+// RedPull 007p — FULL CLEAN VERSION WITH REDGIFS CDN PROBE FIX
 // ============================================================
 
 // DOM elements
@@ -38,7 +38,7 @@ function extractUsername(text) {
 }
 
 // ============================================================
-// GIF DETECTION & CONVERSION
+// GIF DETECTION
 // ============================================================
 function isGif(url) {
     if (!url) return false;
@@ -63,7 +63,7 @@ function convertGifToMP4(url) {
 }
 
 // ============================================================
-// REDGIFS — SCRAPER CDN FALLBACK (NO FETCH)
+// REDGIFS CDN PROBE FIX — OPTION A
 // ============================================================
 async function fetchRedgifsMP4(url) {
     let idMatch = url.match(/\/([A-Za-z0-9]+)$/);
@@ -72,17 +72,23 @@ async function fetchRedgifsMP4(url) {
     let id = idMatch[1];
 
     const hosts = [
-        "https://thumbs5.redgifs.com",
-        "https://thumbs4.redgifs.com",
-        "https://thumbs3.redgifs.com",
-        "https://thumbs2.redgifs.com",
         "https://thumbs1.redgifs.com",
+        "https://thumbs2.redgifs.com",
+        "https://thumbs3.redgifs.com",
+        "https://thumbs4.redgifs.com",
+        "https://thumbs5.redgifs.com",
         "https://giant.redgifs.com",
         "https://img.redgifs.com"
     ];
 
     for (const host of hosts) {
-        return `${host}/${id}.mp4`;
+        const testUrl = `${host}/${id}.mp4`;
+
+        try {
+            const head = await fetch(testUrl, { method: "HEAD" });
+            if (head.ok) return testUrl;
+        } catch (err) {
+        }
     }
 
     return null;
@@ -158,7 +164,6 @@ async function renderPost(post) {
     postMediaIndex[postId] = postMediaList.length;
     let mediaItems = [];
 
-    // GALLERY
     if (post.is_gallery && post.gallery_data && imgFilter.checked) {
 
         let items = post.gallery_data.items;
@@ -174,7 +179,6 @@ async function renderPost(post) {
         return;
     }
 
-    // REDGIFS
     if (imgFilter.checked && url.includes("redgifs.com")) {
         let mp4 = await fetchRedgifsMP4(url);
 
@@ -183,9 +187,15 @@ async function renderPost(post) {
             addSingleMediaToDOM(div, mp4, "gif", post);
             return;
         }
+
+        let err = document.createElement("div");
+        err.textContent = "No working RedGifs source found";
+        err.style.color = "#faa";
+        div.appendChild(err);
+        results.appendChild(div);
+        return;
     }
 
-    // GIF/GIFV
     if (imgFilter.checked && isGif(url)) {
         let mp4 = convertGifToMP4(url);
 
@@ -194,25 +204,19 @@ async function renderPost(post) {
         return;
     }
 
-    // IMAGE
     if (imgFilter.checked && post.post_hint === "image" && url) {
-
         mediaItems.push({ type: "image", src: url, postId: postId });
         addSingleMediaToDOM(div, url, "image", post);
         return;
     }
 
-    // VIDEO
     if (vidFilter.checked && post.is_video && post.media?.reddit_video?.fallback_url) {
-
         let vsrc = post.media.reddit_video.fallback_url;
-
         mediaItems.push({ type: "video", src: vsrc, postId: postId });
         addSingleMediaToDOM(div, vsrc, "video", post);
         return;
     }
 
-    // OTHER LINKS
     if (otherFilter.checked) {
         let link = document.createElement("a");
         link.href = url;
@@ -433,7 +437,7 @@ function updateFullscreenMedia(overlay, media) {
 }
 
 // ============================================================
-// FULLSCREEN SINGLE IMAGE/VIDEO
+// FULLSCREEN SINGLE IMAGE OR VIDEO
 // ============================================================
 function openFullscreen(src, type) {
 
@@ -491,21 +495,17 @@ zipBtn.onclick = () => {
     alert("ZIP downloads coming soon");
 };
 
-
 // ============================================================
-// FULLSCREEN SWIPE SUPPORT (Left/Right)
+// FULLSCREEN SWIPE SUPPORT
 // ============================================================
-
 let touchStartX = 0;
 let touchEndX = 0;
 
 function handleSwipe() {
     const distance = touchEndX - touchStartX;
 
-    // minimum distance to count as swipe
     if (Math.abs(distance) < 50) return;
 
-    // find currently displayed media
     const overlay = document.querySelector(".fullscreen-media");
     if (!overlay) return;
 
@@ -518,11 +518,9 @@ function handleSwipe() {
     if (idx === -1) return;
 
     if (distance < 0 && idx < postMediaList.length - 1) {
-        // swipe left -> next
         updateFullscreenMedia(overlay, postMediaList[idx + 1]);
     }
     else if (distance > 0 && idx > 0) {
-        // swipe right -> previous
         updateFullscreenMedia(overlay, postMediaList[idx - 1]);
     }
 }
