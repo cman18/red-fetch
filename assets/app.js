@@ -1,5 +1,5 @@
 // ============================================================
-// RedPull 009 — FULL VERSION WITH DIRECT REDGIFS MP4 FIX
+// RedPull 010 — FULL VERSION WITH HIDDEN IFRAME REDGIFS FIX
 // ============================================================
 
 // DOM elements
@@ -38,6 +38,51 @@ function extractUsername(text) {
 }
 
 // ============================================================
+// REDGIFS HIDDEN IFRAME EXTRACTION
+// ============================================================
+
+async function fetchRedgifsMP4(url) {
+    let idMatch = url.match(/\/([A-Za-z0-9]+)$/);
+    if (!idMatch) return null;
+
+    let slug = idMatch[1];
+
+    return new Promise(resolve => {
+        const iframe = document.createElement("iframe");
+        iframe.src = `https://www.redgifs.com/ifr/${slug}`;
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "0";
+        iframe.style.position = "absolute";
+        iframe.style.left = "-9999px";
+
+        document.body.appendChild(iframe);
+
+        let checks = 0;
+        const maxChecks = 40;
+
+        const interval = setInterval(() => {
+            try {
+                const vid = iframe.contentDocument?.querySelector("video");
+                if (vid && vid.src && vid.src.startsWith("https")) {
+                    clearInterval(interval);
+                    const mp4 = vid.src;
+                    document.body.removeChild(iframe);
+                    resolve(mp4);
+                }
+            } catch (e) {}
+
+            checks++;
+            if (checks > maxChecks) {
+                clearInterval(interval);
+                document.body.removeChild(iframe);
+                resolve(null);
+            }
+        }, 250);
+    });
+}
+
+// ============================================================
 // GIF DETECTION
 // ============================================================
 function isGif(url) {
@@ -60,31 +105,6 @@ function convertGifToMP4(url) {
         return url.replace(".gif", ".mp4");
     }
     return url;
-}
-
-// ============================================================
-// REDGIFS FIX — USE OFFICIAL API ENDPOINT WITH format=mp4
-// ============================================================
-async function fetchRedgifsMP4(url) {
-    let idMatch = url.match(/\/([A-Za-z0-9]+)$/);
-    if (!idMatch) return null;
-
-    let id = idMatch[1];
-
-    const apiUrl = `https://api.redgifs.com/v2/gifs/${id}?format=mp4`;
-
-    try {
-        const res = await fetch(apiUrl);
-
-        if (!res.ok) return null;
-
-        const data = await res.json();
-
-        return data?.gif?.urls?.hd || data?.gif?.urls?.sd || null;
-
-    } catch (e) {
-        return null;
-    }
 }
 
 // ============================================================
@@ -173,7 +193,7 @@ async function renderPost(post) {
         return;
     }
 
-    // REDGIFS FIX
+    // REDGIFS FIX USING IFRAME
     if (imgFilter.checked && url.includes("redgifs.com")) {
         let mp4 = await fetchRedgifsMP4(url);
 
@@ -184,7 +204,7 @@ async function renderPost(post) {
         }
 
         let err = document.createElement("div");
-        err.textContent = "No working RedGifs source found";
+        err.textContent = "Could not load RedGifs";
         err.style.color = "#faa";
         div.appendChild(err);
         results.appendChild(div);
@@ -277,14 +297,12 @@ function addSingleMediaToDOM(div, src, type, post) {
 // ADD GALLERY WITH ARROWS
 // ============================================================
 function addGalleryToDOM(div, mediaItems, post) {
-
     mediaItems.forEach(item => postMediaList.push(item));
 
     let current = 0;
 
     let img = document.createElement("img");
     img.src = mediaItems[current].src;
-
     img.onclick = () => openFullscreenGallery(mediaItems, current);
 
     div.appendChild(img);
@@ -292,19 +310,17 @@ function addGalleryToDOM(div, mediaItems, post) {
     let left = document.createElement("div");
     left.className = "gallery-arrow-main gallery-arrow-main-left";
     left.textContent = "<";
-    left.style.zIndex = "9999";
 
     let right = document.createElement("div");
     right.className = "gallery-arrow-main gallery-arrow-main-right";
     right.textContent = ">";
-    right.style.zIndex = "9999";
 
-    left.onclick = (e) => {
+    left.onclick = e => {
         e.stopPropagation();
         goGalleryStep(-1, img, mediaItems, post.id);
     };
 
-    right.onclick = (e) => {
+    right.onclick = e => {
         e.stopPropagation();
         goGalleryStep(1, img, mediaItems, post.id);
     };
@@ -357,18 +373,17 @@ function openFullscreenGallery(mediaItems, index) {
     left.className = "gallery-arrow gallery-arrow-left";
     left.textContent = "<";
 
-    left.onclick = (e) => {
-        e.stopPropagation();
-        current = current - 1;
-        if (current < 0) current = mediaItems.length - 1;
-        updateFullscreenMedia(overlay, mediaItems[current]);
-    };
-
     let right = document.createElement("div");
     right.className = "gallery-arrow gallery-arrow-right";
     right.textContent = ">";
 
-    right.onclick = (e) => {
+    left.onclick = e => {
+        e.stopPropagation();
+        current = (current - 1 + mediaItems.length) % mediaItems.length;
+        updateFullscreenMedia(overlay, mediaItems[current]);
+    };
+
+    right.onclick = e => {
         e.stopPropagation();
         current = (current + 1) % mediaItems.length;
         updateFullscreenMedia(overlay, mediaItems[current]);
@@ -421,13 +436,13 @@ function updateFullscreenMedia(overlay, media) {
     right.textContent = ">";
     overlay.appendChild(right);
 
-    left.onclick = (e) => {
+    left.onclick = e => {
         e.stopPropagation();
         let idx = postMediaList.findIndex(m => m.src === media.src);
         if (idx > 0) updateFullscreenMedia(overlay, postMediaList[idx - 1]);
     };
 
-    right.onclick = (e) => {
+    right.onclick = e => {
         e.stopPropagation();
         let idx = postMediaList.findIndex(m => m.src === media.src);
         if (idx < postMediaList.length - 1)
