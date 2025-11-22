@@ -1,22 +1,22 @@
 /* =========================================================
    app.js
-   Version: v1.1.7
+   Version: v1.1.8
    Description:
    - RedGifs extraction from Reddit posts
-   - Reddit .gif fix (i.redd.it GIFs show as images)
+   - i.redd.it GIF fix (display as <img>)
    - YouTube embed support
-   - Debug iframe window
-   - Version display system
+   - Debug iframe
+   - Version panel update
    ========================================================= */
 
-// Inject JS version into version panel
+// Inject JS version into debug panel
 window.addEventListener("DOMContentLoaded", () => {
     const jsBox = document.getElementById("js-version");
-    if (jsBox) jsBox.textContent = "v1.1.7";
+    if (jsBox) jsBox.textContent = "v1.1.8";
 });
 
 /* =========================================================
-   REDGIFS URL DETECTION + NORMALIZATION
+   REDGIFS URL DETECTION + SLUG EXTRACTION
    ========================================================= */
 
 function isRedgifsURL(url) {
@@ -32,7 +32,7 @@ function isRedgifsURL(url) {
 function extractRedgifsSlug(url) {
     if (!url) return null;
 
-    // Reddit outbound link wrapper
+    // Unwrap Reddit redirect
     if (url.includes("out.reddit.com")) {
         const u = new URL(url);
         const dest = u.searchParams.get("url");
@@ -54,7 +54,7 @@ function extractRedgifsSlug(url) {
 }
 
 /* =========================================================
-   REDGIFS DEBUG IFRAME MP4 EXTRACTOR
+   REDGIFS DEBUG IFRAME EXTRACTOR
    ========================================================= */
 
 async function fetchRedgifsMP4(url) {
@@ -81,6 +81,7 @@ async function fetchRedgifsMP4(url) {
         const interval = setInterval(() => {
             try {
                 const vid = iframe.contentDocument?.querySelector("video");
+
                 if (vid && vid.src?.startsWith("https")) {
                     clearInterval(interval);
                     resolve(vid.src);
@@ -150,9 +151,10 @@ function isGif(url) {
 }
 
 function convertGifToMP4(url) {
-    // Reddit hosted .gif files DO NOT have .mp4 versions — leave them as GIF
+
+    // Reddit i.redd.it GIFs must remain as GIF — no MP4 exists
     if (url.includes("i.redd.it") && url.endsWith(".gif")) {
-        return url;
+        return url; // keep GIF
     }
 
     if (url.includes("imgur.com") && url.endsWith(".gifv"))
@@ -170,7 +172,6 @@ function convertGifToMP4(url) {
 
 let postMediaList = [];
 let postMediaIndex = {};
-let currentIndex = 0;
 
 /* =========================================================
    LOAD REDDIT POSTS
@@ -180,7 +181,6 @@ async function loadPosts() {
     results.innerHTML = "";
     postMediaList = [];
     postMediaIndex = {};
-    currentIndex = 0;
 
     const raw = input.value.trim();
     const username = extractUsername(raw);
@@ -221,15 +221,16 @@ async function renderPost(post) {
     let div = document.createElement("div");
     div.className = "post";
 
+    // Title
     let title = document.createElement("div");
     title.textContent = post.title;
     title.style.marginBottom = "12px";
     div.appendChild(title);
 
     let url = post.url || "";
-    let postId = post.id;
+    let id = post.id;
 
-    postMediaIndex[postId] = postMediaList.length;
+    postMediaIndex[id] = postMediaList.length;
 
     /* ----- REDGIFS ----- */
     if (imgFilter.checked && isRedgifsURL(url)) {
@@ -248,7 +249,7 @@ async function renderPost(post) {
         return;
     }
 
-    /* ----- YOUTUBE EMBED ----- */
+    /* ----- YOUTUBE ----- */
     if (
         otherFilter.checked &&
         (url.includes("youtube.com") || url.includes("youtu.be"))
@@ -301,34 +302,43 @@ async function renderPost(post) {
         return;
     }
 
-    /* ----- FALLBACK LINK ----- */
+    /* ----- LINK FALLBACK ----- */
     if (otherFilter.checked) {
         const link = document.createElement("a");
         link.href = url;
         link.textContent = url;
         link.target = "_blank";
         div.appendChild(link);
-
         results.appendChild(div);
         return;
     }
 }
 
 /* =========================================================
-   ADD SINGLE MEDIA ELEMENT TO PAGE
+   ADD MEDIA TO DOM
    ========================================================= */
 
 function addSingleMediaToDOM(div, src, type, post) {
     let el;
 
-    if (type === "gif" || type === "video") {
+    // NEW: Properly display real .gif files as images
+    if (type === "gif" && src.endsWith(".gif")) {
+        el = document.createElement("img");
+        el.src = src;
+    }
+
+    // Videos + MP4-based "GIFs"
+    else if (type === "gif" || type === "video") {
         el = document.createElement("video");
         el.src = src;
         el.controls = type === "video";
         el.autoplay = type === "gif";
         el.loop = type === "gif";
         el.muted = type === "gif";
-    } else {
+    }
+
+    // Standard images
+    else {
         el = document.createElement("img");
         el.src = src;
     }
@@ -353,7 +363,7 @@ function addSingleMediaToDOM(div, src, type, post) {
 }
 
 /* =========================================================
-   FULLSCREEN MEDIA VIEWER
+   FULLSCREEN VIEWER
    ========================================================= */
 
 function openFullscreen(src, type) {
@@ -373,14 +383,13 @@ function openFullscreen(src, type) {
     }
 
     overlay.appendChild(el);
-
     overlay.onclick = () => overlay.remove();
 
     document.body.appendChild(overlay);
 }
 
 /* =========================================================
-   BASIC CONTROLS
+   BUTTON ACTIONS
    ========================================================= */
 
 scrollTopBtn.onclick = () =>
@@ -402,5 +411,5 @@ zipBtn.onclick = () =>
     alert("ZIP downloads coming soon");
 
 /* =========================================================
-   END app.js v1.1.7
+   END app.js v1.1.8
    ========================================================= */
