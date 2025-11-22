@@ -1,5 +1,5 @@
 // ============================================================
-// RedPull 007p — FULL CLEAN VERSION WITH REDGIFS CDN PROBE FIX
+// RedPull 008a — FULL VERSION WITH RELIABLE REDGIFS FIX
 // ============================================================
 
 // DOM elements
@@ -63,7 +63,7 @@ function convertGifToMP4(url) {
 }
 
 // ============================================================
-// REDGIFS CDN PROBE FIX — OPTION A
+// REDGIFS FIX — ALWAYS USE GIANT.REDGIFS.COM
 // ============================================================
 async function fetchRedgifsMP4(url) {
     let idMatch = url.match(/\/([A-Za-z0-9]+)$/);
@@ -71,27 +71,7 @@ async function fetchRedgifsMP4(url) {
 
     let id = idMatch[1];
 
-    const hosts = [
-        "https://thumbs1.redgifs.com",
-        "https://thumbs2.redgifs.com",
-        "https://thumbs3.redgifs.com",
-        "https://thumbs4.redgifs.com",
-        "https://thumbs5.redgifs.com",
-        "https://giant.redgifs.com",
-        "https://img.redgifs.com"
-    ];
-
-    for (const host of hosts) {
-        const testUrl = `${host}/${id}.mp4`;
-
-        try {
-            const head = await fetch(testUrl, { method: "HEAD" });
-            if (head.ok) return testUrl;
-        } catch (err) {
-        }
-    }
-
-    return null;
+    return `https://giant.redgifs.com/${id}.mp4`;
 }
 
 // ============================================================
