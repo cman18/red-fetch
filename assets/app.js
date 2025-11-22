@@ -1,5 +1,5 @@
 // ============================================================
-// RedPull 008a — FULL VERSION WITH RELIABLE REDGIFS FIX
+// RedPull 008b — FULL VERSION WITH RELIABLE REDGIFS WATCH-URL FIX
 // ============================================================
 
 // DOM elements
@@ -63,7 +63,7 @@ function convertGifToMP4(url) {
 }
 
 // ============================================================
-// REDGIFS FIX — ALWAYS USE GIANT.REDGIFS.COM
+// REDGIFS FIX — USE WATCH URL (BROWSER FOLLOWS REDIRECT TO MP4)
 // ============================================================
 async function fetchRedgifsMP4(url) {
     let idMatch = url.match(/\/([A-Za-z0-9]+)$/);
@@ -71,7 +71,8 @@ async function fetchRedgifsMP4(url) {
 
     let id = idMatch[1];
 
-    return `https://giant.redgifs.com/${id}.mp4`;
+    // This watch link ALWAYS redirects to the correct MP4 URL
+    return `https://www.redgifs.com/watch/${id}`;
 }
 
 // ============================================================
@@ -144,6 +145,7 @@ async function renderPost(post) {
     postMediaIndex[postId] = postMediaList.length;
     let mediaItems = [];
 
+    // GALLERY POSTS
     if (post.is_gallery && post.gallery_data && imgFilter.checked) {
 
         let items = post.gallery_data.items;
@@ -159,6 +161,7 @@ async function renderPost(post) {
         return;
     }
 
+    // REDGIFS FIX
     if (imgFilter.checked && url.includes("redgifs.com")) {
         let mp4 = await fetchRedgifsMP4(url);
 
@@ -176,6 +179,7 @@ async function renderPost(post) {
         return;
     }
 
+    // GIF/GIFV
     if (imgFilter.checked && isGif(url)) {
         let mp4 = convertGifToMP4(url);
 
@@ -184,12 +188,14 @@ async function renderPost(post) {
         return;
     }
 
+    // IMAGE POSTS
     if (imgFilter.checked && post.post_hint === "image" && url) {
         mediaItems.push({ type: "image", src: url, postId: postId });
         addSingleMediaToDOM(div, url, "image", post);
         return;
     }
 
+    // VIDEO POSTS (REDDIT HOSTED)
     if (vidFilter.checked && post.is_video && post.media?.reddit_video?.fallback_url) {
         let vsrc = post.media.reddit_video.fallback_url;
         mediaItems.push({ type: "video", src: vsrc, postId: postId });
@@ -197,6 +203,7 @@ async function renderPost(post) {
         return;
     }
 
+    // OTHER LINKS
     if (otherFilter.checked) {
         let link = document.createElement("a");
         link.href = url;
