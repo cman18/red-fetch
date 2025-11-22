@@ -1,5 +1,5 @@
 // ============================================================
-// RedPull 008c — FULL VERSION WITH REAL REDGIFS CDN PROBE FIX
+// RedPull 008c — FULL VERSION WITH REDGIFS WORKER FIX
 // ============================================================
 
 // DOM elements
@@ -63,7 +63,7 @@ function convertGifToMP4(url) {
 }
 
 // ============================================================
-// REDGIFS FIX — PROBE REAL CDN SOURCES FOR VALID MP4
+// REDGIFS FIX — USE CLOUDFLARE WORKER TO GET REAL MP4
 // ============================================================
 async function fetchRedgifsMP4(url) {
     let idMatch = url.match(/\/([A-Za-z0-9]+)$/);
@@ -74,9 +74,7 @@ async function fetchRedgifsMP4(url) {
     try {
         const res = await fetch(`https://red.coffeemanhou.workers.dev/redgifs?id=${id}`);
         const data = await res.json();
-
         return data.mp4 || null;
-
     } catch (e) {
         return null;
     }
@@ -346,186 +344,3 @@ function openFullscreenGallery(mediaItems, index) {
     let current = index;
 
     let el = buildFullscreenElement(mediaItems[current]);
-    overlay.appendChild(el);
-
-    let left = document.createElement("div");
-    left.className = "gallery-arrow gallery-arrow-left";
-    left.textContent = "<";
-
-    left.onclick = (e) => {
-        e.stopPropagation();
-        current = current - 1;
-        if (current < 0) current = mediaItems.length - 1;
-        updateFullscreenMedia(overlay, mediaItems[current]);
-    };
-
-    let right = document.createElement("div");
-    right.className = "gallery-arrow gallery-arrow-right";
-    right.textContent = ">";
-
-    right.onclick = (e) => {
-        e.stopPropagation();
-        current = (current + 1) % mediaItems.length;
-        updateFullscreenMedia(overlay, mediaItems[current]);
-    };
-
-    overlay.appendChild(left);
-    overlay.appendChild(right);
-
-    overlay.onclick = () => overlay.remove();
-    document.body.appendChild(overlay);
-}
-
-// ============================================================
-// BUILD FULLSCREEN ELEMENT
-// ============================================================
-function buildFullscreenElement(media) {
-
-    let el;
-
-    if (media.type === "image") {
-        el = document.createElement("img");
-        el.src = media.src;
-    } else {
-        el = document.createElement("video");
-        el.src = media.src;
-        el.controls = true;
-        el.autoplay = true;
-    }
-
-    return el;
-}
-
-// ============================================================
-// UPDATE FULLSCREEN MEDIA
-// ============================================================
-function updateFullscreenMedia(overlay, media) {
-
-    overlay.innerHTML = "";
-
-    let el = buildFullscreenElement(media);
-    overlay.appendChild(el);
-
-    let left = document.createElement("div");
-    left.className = "gallery-arrow gallery-arrow-left";
-    left.textContent = "<";
-    overlay.appendChild(left);
-
-    let right = document.createElement("div");
-    right.className = "gallery-arrow gallery-arrow-right";
-    right.textContent = ">";
-    overlay.appendChild(right);
-
-    left.onclick = (e) => {
-        e.stopPropagation();
-        let idx = postMediaList.findIndex(m => m.src === media.src);
-        if (idx > 0) updateFullscreenMedia(overlay, postMediaList[idx - 1]);
-    };
-
-    right.onclick = (e) => {
-        e.stopPropagation();
-        let idx = postMediaList.findIndex(m => m.src === media.src);
-        if (idx < postMediaList.length - 1)
-            updateFullscreenMedia(overlay, postMediaList[idx + 1]);
-    };
-}
-
-// ============================================================
-// FULLSCREEN SINGLE IMAGE OR VIDEO
-// ============================================================
-function openFullscreen(src, type) {
-
-    const overlay = document.createElement("div");
-    overlay.className = "fullscreen-media";
-
-    let el;
-
-    if (type === "img") {
-        el = document.createElement("img");
-        el.src = src;
-    } else {
-        el = document.createElement("video");
-        el.src = src;
-        el.controls = true;
-        el.autoplay = true;
-    }
-
-    overlay.appendChild(el);
-
-    overlay.onclick = () => overlay.remove();
-
-    document.body.appendChild(overlay);
-}
-
-// ============================================================
-// SCROLL TO TOP
-// ============================================================
-scrollTopBtn.onclick = () => {
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-};
-
-// ============================================================
-// BUTTON HANDLERS
-// ============================================================
-loadBtn.onclick = loadPosts;
-
-clearBtn.onclick = () => {
-    input.value = "";
-    results.innerHTML = "";
-    postMediaList = [];
-    postMediaIndex = {};
-    currentIndex = 0;
-    totalMediaCount = 0;
-};
-
-copyBtn.onclick = () => {
-    navigator.clipboard.writeText(input.value.trim());
-};
-
-zipBtn.onclick = () => {
-    alert("ZIP downloads coming soon");
-};
-
-// ============================================================
-// FULLSCREEN SWIPE SUPPORT
-// ============================================================
-let touchStartX = 0;
-let touchEndX = 0;
-
-function handleSwipe() {
-    const distance = touchEndX - touchStartX;
-
-    if (Math.abs(distance) < 50) return;
-
-    const overlay = document.querySelector(".fullscreen-media");
-    if (!overlay) return;
-
-    const mediaEl = overlay.querySelector("img, video");
-    if (!mediaEl) return;
-
-    const currentSrc = mediaEl.src;
-    const idx = postMediaList.findIndex(m => m.src === currentSrc);
-
-    if (idx === -1) return;
-
-    if (distance < 0 && idx < postMediaList.length - 1) {
-        updateFullscreenMedia(overlay, postMediaList[idx + 1]);
-    }
-    else if (distance > 0 && idx > 0) {
-        updateFullscreenMedia(overlay, postMediaList[idx - 1]);
-    }
-}
-
-document.addEventListener("touchstart", function (e) {
-    if (!document.querySelector(".fullscreen-media")) return;
-    touchStartX = e.changedTouches[0].screenX;
-});
-
-document.addEventListener("touchend", function (e) {
-    if (!document.querySelector(".fullscreen-media")) return;
-    touchEndX = e.changedTouches[0].screenX;
-    handleSwipe();
-});
