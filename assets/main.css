@@ -1,7 +1,7 @@
 /* =========================================================
    main.css
-   Version: v1.1.2
-   Description: Full stylesheet for RedPull viewer
+   Version: v1.1.5
+   Description: Complete stylesheet for RedPull viewer
    ========================================================= */
 
 body {
@@ -184,7 +184,6 @@ button:hover {
     opacity: 0.6;
 }
 
-/* Debug Version Panel */
 #debug-version-box {
     position: fixed;
     bottom: 10px;
@@ -201,5 +200,5 @@ button:hover {
 }
 
 /* =========================================================
-   END main.css v1.1.2
+   END main.css v1.1.5
    ========================================================= */
