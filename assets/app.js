@@ -1,20 +1,14 @@
-// ============================================================
-// RedPull 011 — DEBUG VERSION WITH VISIBLE REDGIFS IFRAME (B1)
-// ============================================================
+/* =========================================================
+   app.js
+   Version: v1.1.3
+   Description: Full RedPull logic + RedGifs debug iframe
+   ========================================================= */
 
-// DOM elements
-const input = document.getElementById("input");
-const loadBtn = document.getElementById("loadBtn");
-const clearBtn = document.getElementById("clearBtn");
-const copyBtn = document.getElementById("copyBtn");
-const zipBtn = document.getElementById("zipBtn");
-const scrollTopBtn = document.getElementById("scrollTopBtn");
-const results = document.getElementById("results");
-
-// Filters
-const imgFilter = document.getElementById("imgFilter");
-const vidFilter = document.getElementById("vidFilter");
-const otherFilter = document.getElementById("otherFilter");
+// Inject JS version into debug panel
+window.addEventListener("DOMContentLoaded", () => {
+    const jsBox = document.getElementById("js-version");
+    if (jsBox) jsBox.textContent = "v1.1.3";
+});
 
 // ============================================================
 // REDGIFS DEBUG IFRAME EXTRACTOR (VISIBLE B1)
@@ -30,9 +24,9 @@ async function fetchRedgifsMP4(url) {
         const iframe = document.createElement("iframe");
         iframe.src = `https://www.redgifs.com/ifr/${slug}`;
 
-        // B1 Debug mode visible
+        // Debug mode visible
         iframe.style.position = "fixed";
-        iframe.style.bottom = "10px";
+        iframe.style.bottom = "180px";
         iframe.style.left = "10px";
         iframe.style.width = "220px";
         iframe.style.height = "160px";
@@ -49,11 +43,10 @@ async function fetchRedgifsMP4(url) {
                 const vid = iframe.contentDocument?.querySelector("video");
                 if (vid && vid.src && vid.src.startsWith("https")) {
                     clearInterval(interval);
+
                     const mp4 = vid.src;
 
-                    // KEEP the iframe visible for debugging — comment out to auto-remove later
-                    // document.body.removeChild(iframe);
-
+                    // KEEP iframe visible for debugging
                     resolve(mp4);
                 }
             } catch (e) {}
@@ -68,8 +61,25 @@ async function fetchRedgifsMP4(url) {
 }
 
 // ============================================================
+// DOM ELEMENTS
+// ============================================================
+
+const input = document.getElementById("input");
+const loadBtn = document.getElementById("loadBtn");
+const clearBtn = document.getElementById("clearBtn");
+const copyBtn = document.getElementById("copyBtn");
+const zipBtn = document.getElementById("zipBtn");
+const scrollTopBtn = document.getElementById("scrollTopBtn");
+const results = document.getElementById("results");
+
+const imgFilter = document.getElementById("imgFilter");
+const vidFilter = document.getElementById("vidFilter");
+const otherFilter = document.getElementById("otherFilter");
+
+// ============================================================
 // USERNAME EXTRACTION
 // ============================================================
+
 function extractUsername(text) {
     if (!text) return null;
     text = text.trim();
@@ -91,6 +101,7 @@ function extractUsername(text) {
 // ============================================================
 // GIF DETECTION
 // ============================================================
+
 function isGif(url) {
     if (!url) return false;
 
@@ -114,8 +125,9 @@ function convertGifToMP4(url) {
 }
 
 // ============================================================
-// GLOBAL MEDIA NAVIGATION
+// GLOBAL MEDIA
 // ============================================================
+
 let postMediaList = [];
 let postMediaIndex = {};
 let currentIndex = 0;
@@ -124,6 +136,7 @@ let totalMediaCount = 0;
 // ============================================================
 // LOAD POSTS
 // ============================================================
+
 async function loadPosts() {
     results.innerHTML = "";
     postMediaList = [];
@@ -167,6 +180,7 @@ async function loadPosts() {
 // ============================================================
 // RENDER POST
 // ============================================================
+
 async function renderPost(post) {
 
     let div = document.createElement("div");
@@ -183,7 +197,7 @@ async function renderPost(post) {
     postMediaIndex[postId] = postMediaList.length;
     let mediaItems = [];
 
-    // GALLERY POSTS
+    // GALLERY
     if (post.is_gallery && post.gallery_data && imgFilter.checked) {
 
         let items = post.gallery_data.items;
@@ -199,7 +213,7 @@ async function renderPost(post) {
         return;
     }
 
-    // REDGIFS FIX WITH DEBUG IFRAME
+    // REDGIFS (debug iframe)
     if (imgFilter.checked && url.includes("redgifs.com")) {
         let mp4 = await fetchRedgifsMP4(url);
 
@@ -210,7 +224,7 @@ async function renderPost(post) {
         }
 
         let err = document.createElement("div");
-        err.textContent = "RedGifs failed to load";
+        err.textContent = "Could not load RedGifs";
         err.style.color = "#faa";
         div.appendChild(err);
         results.appendChild(div);
@@ -226,14 +240,14 @@ async function renderPost(post) {
         return;
     }
 
-    // IMAGE POSTS
+    // IMAGE
     if (imgFilter.checked && post.post_hint === "image" && url) {
         mediaItems.push({ type: "image", src: url, postId: postId });
         addSingleMediaToDOM(div, url, "image", post);
         return;
     }
 
-    // VIDEO POSTS (REDDIT HOSTED)
+    // VIDEO
     if (vidFilter.checked && post.is_video && post.media?.reddit_video?.fallback_url) {
         let vsrc = post.media.reddit_video.fallback_url;
         mediaItems.push({ type: "video", src: vsrc, postId: postId });
@@ -241,7 +255,7 @@ async function renderPost(post) {
         return;
     }
 
-    // OTHER LINKS
+    // OTHER LINK
     if (otherFilter.checked) {
         let link = document.createElement("a");
         link.href = url;
@@ -259,6 +273,7 @@ async function renderPost(post) {
 // ============================================================
 // ADD SINGLE MEDIA
 // ============================================================
+
 function addSingleMediaToDOM(div, src, type, post) {
 
     let el;
@@ -300,11 +315,12 @@ function addSingleMediaToDOM(div, src, type, post) {
 }
 
 // ============================================================
-// GALLERY & FULLSCREEN CODE (unchanged)
+// ADD GALLERY
 // ============================================================
 
-function addGalleryToDOM( div, mediaItems, post ) {
-    mediaItems.forEach(item => postMediaList.push(item));
+function addGalleryToDOM(div, mediaItems, post) {
+    mediaItems
+    .forEach(item => postMediaList.push(item));
 
     let current = 0;
 
@@ -343,7 +359,12 @@ function addGalleryToDOM( div, mediaItems, post ) {
     results.appendChild(div);
 }
 
+// ============================================================
+// GALLERY STEPS
+// ============================================================
+
 function goGalleryStep(direction, imgElement, mediaItems, postId) {
+
     let startIndex = postMediaIndex[postId];
     if (startIndex === undefined) return;
 
@@ -359,7 +380,12 @@ function goGalleryStep(direction, imgElement, mediaItems, postId) {
     imgElement.src = postMediaList[nextIdx].src;
 }
 
+// ============================================================
+// FULLSCREEN GALLERY
+// ============================================================
+
 function openFullscreenGallery(mediaItems, index) {
+
     const overlay = document.createElement("div");
     overlay.className = "fullscreen-media";
 
@@ -395,7 +421,12 @@ function openFullscreenGallery(mediaItems, index) {
     document.body.appendChild(overlay);
 }
 
+// ============================================================
+// BUILD FULLSCREEN ELEMENT
+// ============================================================
+
 function buildFullscreenElement(media) {
+
     let el;
 
     if (media.type === "image") {
@@ -411,7 +442,12 @@ function buildFullscreenElement(media) {
     return el;
 }
 
+// ============================================================
+// UPDATE FULLSCREEN MEDIA
+// ============================================================
+
 function updateFullscreenMedia(overlay, media) {
+
     overlay.innerHTML = "";
 
     let el = buildFullscreenElement(media);
@@ -441,7 +477,12 @@ function updateFullscreenMedia(overlay, media) {
     };
 }
 
+// ============================================================
+// FULLSCREEN SINGLE MEDIA
+// ============================================================
+
 function openFullscreen(src, type) {
+
     const overlay = document.createElement("div");
     overlay.className = "fullscreen-media";
 
@@ -465,8 +506,9 @@ function openFullscreen(src, type) {
 }
 
 // ============================================================
-// SCROLL & BUTTONS
+// BUTTONS
 // ============================================================
+
 scrollTopBtn.onclick = () => {
     window.scrollTo({
         top: 0,
@@ -496,6 +538,7 @@ zipBtn.onclick = () => {
 // ============================================================
 // FULLSCREEN SWIPE SUPPORT
 // ============================================================
+
 let touchStartX = 0;
 let touchEndX = 0;
 
@@ -533,3 +576,7 @@ document.addEventListener("touchend", function (e) {
     touchEndX = e.changedTouches[0].screenX;
     handleSwipe();
 });
+
+/* =========================================================
+   END app.js v1.1.3
+   ========================================================= */
