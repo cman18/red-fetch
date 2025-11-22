@@ -1,5 +1,5 @@
 // ============================================================
-// RedPull 008b — FULL VERSION WITH RELIABLE REDGIFS WATCH-URL FIX
+// RedPull 008c — FULL VERSION WITH REAL REDGIFS CDN PROBE FIX
 // ============================================================
 
 // DOM elements
@@ -63,16 +63,35 @@ function convertGifToMP4(url) {
 }
 
 // ============================================================
-// REDGIFS FIX — USE WATCH URL (BROWSER FOLLOWS REDIRECT TO MP4)
+// REDGIFS FIX — PROBE REAL CDN SOURCES FOR VALID MP4
 // ============================================================
 async function fetchRedgifsMP4(url) {
     let idMatch = url.match(/\/([A-Za-z0-9]+)$/);
     if (!idMatch) return null;
 
-    let id = idMatch[1];
+    let slug = idMatch[1];
 
-    // This watch link ALWAYS redirects to the correct MP4 URL
-    return `https://www.redgifs.com/watch/${id}`;
+    const hosts = [
+        "https://thumbs1.redgifs.com",
+        "https://thumbs2.redgifs.com",
+        "https://thumbs3.redgifs.com",
+        "https://thumbs4.redgifs.com",
+        "https://thumbs5.redgifs.com"
+    ];
+
+    for (const host of hosts) {
+        const testUrl = `${host}/${slug}.mp4`;
+
+        try {
+            const res = await fetch(testUrl, { method: "GET" });
+
+            if (res.ok && res.headers.get("content-type")?.includes("video")) {
+                return testUrl;
+            }
+        } catch (e) {}
+    }
+
+    return null;
 }
 
 // ============================================================
