@@ -1,3 +1,415 @@
-/* app.js v1.1.10 (minified production build) */
-window.addEventListener("DOMContentLoaded",()=>{const e=document.getElementById("js-version");e&&(e.textContent="v1.1.10")});function isRedgifsURL(e){return!!e&&(e.includes("redgifs.com")||e.includes("v2.redgifs.com")||e.includes("out.reddit.com")&&e.includes("redgifs"))}function extractRedgifsSlug(e){if(!e)return null;if(e.includes("out.reddit.com")){let t=new URL(e).searchParams.get("url");t&&(e=t)}let t=[/redgifs\.com\/watch\/([A-Za-z0-9]+)/,/redgifs\.com\/ifr\/([A-Za-z0-9]+)/,/\/([A-Za-z0-9]+)$/];for(let r of t){let t=e.match(r);if(t)return t[1]}return null}async function fetchRedgifsMP4(e){let t=extractRedgifsSlug(e);return t?new Promise(r=>{const n=document.createElement("iframe");n.src=`https://www.redgifs.com/ifr/${t}`,n.style.position="fixed",n.style.bottom="180px",n.style.left="10px",n.style.width="220px",n.style.height="160px",n.style.border="2px solid #0ff",n.style.zIndex="999999",document.body.appendChild(n);let i=0,o=50,a=setInterval(()=>{try{let e=n.contentDocument?.querySelector("video");if(e&&e.src?.startsWith("https"))return clearInterval(a),void r(e.src)}catch(e){}++i>=o&&(clearInterval(a),r(null))},350)}):null}function extractUsername(e){if(!e)return null;if(e=e.trim(),e.match(/\/u\/([^\/]+)/i))return e.match(/\/u\/([^\/]+)/i)[1];if(e.match(/reddit\.com\/user\/([^\/]+)/i))return e.match(/reddit\.com\/user\/([^\/]+)/i)[1];if(e.match(/\bu\/([A-Za-z0-9_-]+)/i))return e.match(/\bu\/([A-Za-z0-9_-]+)/i)[1];return/^[A-Za-z0-9_-]{2,30}$/.test(e)?e:null}function isGif(e){return!!e&&(e.endsWith(".gif")||e.endsWith(".gifv")||e.includes("imgur.com")&&e.match(/\.gifv?$/)||e.includes("gfycat"))}function convertGifToMP4(e){return e.includes("i.redd.it")&&e.endsWith(".gif")?e:e.includes("imgur.com")&&e.endsWith(".gifv")?e.replace(".gifv",".mp4"):e.endsWith(".gif")?e.replace(".gif",".mp4"):e}let postMediaList=[],postMediaIndex={};const input=document.getElementById("input"),loadBtn=document.getElementById("loadBtn"),clearBtn=document.getElementById("clearBtn"),copyBtn=document.getElementById("copyBtn"),zipBtn=document.getElementById("zipBtn"),scrollTopBtn=document.getElementById("scrollTopBtn"),results=document.getElementById("results"),imgFilter=document.getElementById("imgFilter"),vidFilter=document.getElementById("vidFilter"),otherFilter=document.getElementById("otherFilter");async function loadPosts(){results.innerHTML="",postMediaList=[],postMediaIndex={};let e=extractUsername(input.value.trim());if(!e)return void(results.innerHTML="<div class='post'>Invalid username or URL.</div>");try{let t=await fetch(`https://api.reddit.com/user/${e}/submitted?raw_json=1`);if(!t.ok)throw Error("Reddit blocked fetch");let r=(await t.json()).data.children;if(!r.length)return void(results.innerHTML="<div class='post'>No posts found.</div>");for(let e of r)await renderPost(e.data)}catch(e){results.innerHTML=`<div class="post">Error: ${e.message}</div>`}}async function renderPost(e){let t=document.createElement("div");t.className="post";let r=document.createElement("div");r.textContent=e.title,r.style.marginBottom="12px",t.appendChild(r);let n=document.createElement("div");n.className="tile-media";let i=e.url||"",o=e.id;if(postMediaIndex[o]=postMediaList.length,imgFilter.checked&&isRedgifsURL(i)){let r=await fetchRedgifsMP4(i);return r?(appendMedia(n,t,r,"gif",e),void results.appendChild(t)):(t.appendChild(errBox("Could not load RedGifs")),void results.appendChild(t))}if(otherFilter.checked&&(i.includes("youtube.com")||i.includes("youtu.be"))){let r=null;return i.match(/v=([^&]+)/)&&(r=i.match(/v=([^&]+)/)[1]),!r&&i.match(/youtu\.be\/([^?]+)/)&&(r=i.match(/youtu\.be\/([^?]+)/)[1]),r?(appendIframe(n,t,`https://www.youtube.com/embed/${r}`),void results.appendChild(t)):void 0}if(otherFilter.checked&&i.includes("vimeo.com")){let e=i.match(/vimeo\.com\/(\d+)/);return e?(appendIframe(n,t,`https://player.vimeo.com/video/${e[1]}`),void results.appendChild(t)):void 0}if(otherFilter.checked&&i.includes("twitch.tv")){let e=i.match(/clip\/([^/?]+)/);return e?(appendIframe(n,t,`https://clips.twitch.tv/embed?clip=${e[1]}&parent=localhost`),void results.appendChild(t)):void 0}if(otherFilter.checked&&(i.includes("pornhub.com")||i.includes("phncdn.com"))){appendIframe(n,t,i.replace("view_video.php?viewkey=","embed/"));return void results.appendChild(t)}if(otherFilter.checked&&i.includes("redtube.com")){let e=i.match(/redtube\.com\/(\d+)/);return e?(appendIframe(n,t,`https://embed.redtube.com/?id=${e[1]}&bgcolor=000000`),void results.appendChild(t)):void 0}if(otherFilter.checked&&i.includes("twitter.com")){appendIframe(n,t,i.replace("twitter.com","twitframe.com"));return void results.appendChild(t)}if(imgFilter.checked&&isGif(i))return appendMedia(n,t,convertGifToMP4(i),"gif",e),void results.appendChild(t);if(imgFilter.checked&&"image"===e.post_hint)return appendMedia(n,t,i,"image",e),void results.appendChild(t);if(imgFilter.checked&&(i.endsWith(".jpg")||i.endsWith(".jpeg")||i.endsWith(".png")))return appendMedia(n,t,i,"image",e),void results.appendChild(t);if(vidFilter.checked&&e.is_video&&e.media?.reddit_video?.fallback_url)return appendMedia(n,t,e.media.reddit_video.fallback_url,"video",e),void results.appendChild(t);if(otherFilter.checked){let r=document.createElement("a");return r.href=i,r.textContent=i,r.target="_blank",t.appendChild(r),void results.appendChild(t)}}function appendMedia(e,t,r,n,i){let o="gif"===n&&r.endsWith(".gif")?document.createElement("img"):document.createElement("video");"img"===o.tagName.toLowerCase()?o.src=r:(o.src=r,o.controls="video"===n,o.autoplay="gif"===n,o.loop="gif"===n,o.muted="gif"===n),o.className="",e.appendChild(o);let a=document.createElement("div");a.className="post-url",a.textContent=i.url,t.appendChild(e),t.appendChild(a),postMediaList.push({type:n,src:r,postId:i.id})}function appendIframe(e,t,r){let n=document.createElement("iframe");n.src=r,n.allow="autoplay; encrypted-media",e.appendChild(n),t.appendChild(e)}function errBox(e){let t=document.createElement("div");return t.style.color="#faa",t.textContent=e,t}scrollTopBtn.onclick=()=>{window.scrollTo({top:0,behavior:"smooth"})},loadBtn.onclick=loadPosts,clearBtn.onclick=()=>{input.value="",results.innerHTML="",postMediaList=[],postMediaIndex={}},copyBtn.onclick=()=>{navigator.clipboard.writeText(input.value.trim())},zipBtn.onclick=()=>{alert("ZIP downloads coming soon")};
-/* END app.js v1.1.10 */
+/* =========================================================
+   app.js
+   Version: v1.1.11
+   ========================================================= */
+
+window.addEventListener("DOMContentLoaded", () => {
+    const box = document.getElementById("js-version");
+    if (box) box.textContent = "v1.1.11";
+});
+
+/* =========================================================
+   REDGIFS DETECTION + SLUG EXTRACTION
+   ========================================================= */
+
+function isRedgifsURL(url) {
+    if (!url) return false;
+    return (
+        url.includes("redgifs.com") ||
+        url.includes("v2.redgifs.com") ||
+        (url.includes("out.reddit.com") && url.includes("redgifs"))
+    );
+}
+
+function extractRedgifsSlug(url) {
+    if (!url) return null;
+
+    // unwrap reddit redirect
+    if (url.includes("out.reddit.com")) {
+        const u = new URL(url);
+        const dest = u.searchParams.get("url");
+        if (dest) url = dest;
+    }
+
+    const patterns = [
+        /redgifs\.com\/watch\/([A-Za-z0-9]+)/,
+        /redgifs\.com\/ifr\/([A-Za-z0-9]+)/,
+        /\/([A-Za-z0-9]+)$/
+    ];
+
+    for (let p of patterns) {
+        let m = url.match(p);
+        if (m) return m[1];
+    }
+
+    return null;
+}
+
+/* =========================================================
+   REDGIFS VIDEO EXTRACTOR (DEBUG IFR METHOD)
+   ========================================================= */
+
+async function fetchRedgifsMP4(url) {
+    const slug = extractRedgifsSlug(url);
+    if (!slug) return null;
+
+    return new Promise(resolve => {
+        const iframe = document.createElement("iframe");
+        iframe.src = `https://www.redgifs.com/ifr/${slug}`;
+        iframe.style.position = "fixed";
+        iframe.style.bottom = "180px";
+        iframe.style.left = "10px";
+        iframe.style.width = "220px";
+        iframe.style.height = "160px";
+        iframe.style.border = "2px solid cyan";
+        iframe.style.zIndex = "999999";
+        document.body.appendChild(iframe);
+
+        let tries = 0;
+        const maxTries = 50;
+
+        const iv = setInterval(() => {
+            try {
+                const vid = iframe.contentDocument?.querySelector("video");
+                if (vid && vid.src?.startsWith("https")) {
+                    clearInterval(iv);
+                    resolve(vid.src);
+                }
+            } catch (err) { }
+
+            tries++;
+            if (tries >= maxTries) {
+                clearInterval(iv);
+                resolve(null);
+            }
+        }, 350);
+    });
+}
+
+/* =========================================================
+   USERNAME EXTRACTION
+   ========================================================= */
+
+function extractUsername(text) {
+    if (!text) return null;
+    text = text.trim();
+
+    let m = text.match(/\/u\/([^\/]+)/i);
+    if (m) return m[1];
+
+    m = text.match(/reddit\.com\/user\/([^\/]+)/i);
+    if (m) return m[1];
+
+    m = text.match(/\bu\/([A-Za-z0-9_-]+)/i);
+    if (m) return m[1];
+
+    if (/^[A-Za-z0-9_-]{2,30}$/.test(text)) return text;
+
+    return null;
+}
+
+/* =========================================================
+   FILETYPE HELPERS
+   ========================================================= */
+
+function isGif(url) {
+    if (!url) return false;
+    return (
+        url.endsWith(".gif") ||
+        url.endsWith(".gifv") ||
+        (url.includes("imgur.com") && url.match(/\.gifv?$/)) ||
+        url.includes("gfycat")
+    );
+}
+
+function convertGifToMP4(url) {
+    if (url.includes("i.redd.it") && url.endsWith(".gif")) return url;
+    if (url.includes("imgur.com") && url.endsWith(".gifv")) return url.replace(".gifv", ".mp4");
+    if (url.endsWith(".gif")) return url.replace(".gif", ".mp4");
+    return url;
+}
+
+/* =========================================================
+   DOM ELEMENTS
+   ========================================================= */
+
+const input = document.getElementById("input");
+const loadBtn = document.getElementById("loadBtn");
+const clearBtn = document.getElementById("clearBtn");
+const copyBtn = document.getElementById("copyBtn");
+const zipBtn = document.getElementById("zipBtn");
+const scrollTopBtn = document.getElementById("scrollTopBtn");
+const results = document.getElementById("results");
+
+const imgFilter = document.getElementById("imgFilter");
+const vidFilter = document.getElementById("vidFilter");
+const otherFilter = document.getElementById("otherFilter");
+
+let postMediaList = [];
+let postMediaIndex = {};
+
+/* =========================================================
+   LOAD POSTS
+   ========================================================= */
+
+async function loadPosts() {
+    results.innerHTML = "";
+    postMediaList = [];
+    postMediaIndex = {};
+
+    const raw = input.value.trim();
+    const username = extractUsername(raw);
+
+    if (!username) {
+        results.innerHTML = "<div class='post'>Invalid username or URL.</div>";
+        return;
+    }
+
+    try {
+        const url = `https://api.reddit.com/user/${username}/submitted?raw_json=1`;
+        const res = await fetch(url);
+
+        if (!res.ok) throw new Error("Reddit blocked fetch");
+
+        const data = await res.json();
+        const posts = data.data.children;
+
+        if (!posts.length) {
+            results.innerHTML = "<div class='post'>No posts found.</div>";
+            return;
+        }
+
+        for (let p of posts) {
+            await renderPost(p.data);
+        }
+
+    } catch (err) {
+        results.innerHTML = `<div class="post">Error loading posts: ${err.message}</div>`;
+    }
+}
+
+/* =========================================================
+   RENDER POST
+   ========================================================= */
+
+async function renderPost(post) {
+    let div = document.createElement("div");
+    div.className = "post";
+
+    let title = document.createElement("div");
+    title.textContent = post.title;
+    title.style.marginBottom = "12px";
+    div.appendChild(title);
+
+    let mediaBox = document.createElement("div");
+    mediaBox.className = "tile-media";
+
+    let url = post.url || "";
+    let id = post.id;
+
+    postMediaIndex[id] = postMediaList.length;
+
+    /* ---------- HARD IMAGE FALLBACK (jpg/png/webp) ---------- */
+
+    if (imgFilter.checked && url.match(/\.(jpg|jpeg|png|webp)$/i)) {
+        appendMedia(mediaBox, div, url, "image", post);
+        results.appendChild(div);
+        return;
+    }
+
+    /* ---------- REDGIFS ---------- */
+
+    if (imgFilter.checked && isRedgifsURL(url)) {
+        const mp4 = await fetchRedgifsMP4(url);
+
+        if (mp4) {
+            appendMedia(mediaBox, div, mp4, "gif", post);
+            results.appendChild(div);
+            return;
+        }
+
+        let err = document.createElement("div");
+        err.textContent = "Could not load RedGifs";
+        err.style.color = "#faa";
+        div.appendChild(err);
+        results.appendChild(div);
+        return;
+    }
+
+    /* ---------- YOUTUBE ---------- */
+
+    if (otherFilter.checked &&
+        (url.includes("youtube.com") || url.includes("youtu.be"))) {
+
+        let id = null;
+        let m1 = url.match(/v=([^&]+)/);
+        if (m1) id = m1[1];
+        let m2 = url.match(/youtu\.be\/([^?]+)/);
+        if (!id && m2) id = m2[1];
+
+        if (id) {
+            appendIframe(mediaBox, div, `https://www.youtube.com/embed/${id}`);
+            results.appendChild(div);
+            return;
+        }
+    }
+
+    /* ---------- VIMEO ---------- */
+    if (otherFilter.checked && url.includes("vimeo.com")) {
+        let m = url.match(/vimeo\.com\/(\d+)/);
+        if (m) {
+            appendIframe(mediaBox, div, `https://player.vimeo.com/video/${m[1]}`);
+            results.appendChild(div);
+            return;
+        }
+    }
+
+    /* ---------- TWITCH CLIPS ---------- */
+    if (otherFilter.checked && url.includes("twitch.tv")) {
+        let m = url.match(/clip\/([^/?]+)/);
+        if (m) {
+            appendIframe(mediaBox, div,
+                `https://clips.twitch.tv/embed?clip=${m[1]}&parent=localhost`);
+            results.appendChild(div);
+            return;
+        }
+    }
+
+    /* ---------- PORNHUB ---------- */
+    if (otherFilter.checked &&
+        (url.includes("pornhub.com") || url.includes("phncdn.com"))) {
+        let embed = url.replace("view_video.php?viewkey=", "embed/");
+        appendIframe(mediaBox, div, embed);
+        results.appendChild(div);
+        return;
+    }
+
+    /* ---------- REDTUBE ---------- */
+    if (otherFilter.checked && url.includes("redtube.com")) {
+        let m = url.match(/redtube\.com\/(\d+)/);
+        if (m) {
+            appendIframe(mediaBox, div,
+                `https://embed.redtube.com/?id=${m[1]}&bgcolor=000000`);
+            results.appendChild(div);
+            return;
+        }
+    }
+
+    /* ---------- TWITTER/X ---------- */
+    if (otherFilter.checked && url.includes("twitter.com")) {
+        appendIframe(mediaBox, div,
+            url.replace("twitter.com", "twitframe.com"));
+        results.appendChild(div);
+        return;
+    }
+
+    /* ---------- GIF ---------- */
+    if (imgFilter.checked && isGif(url)) {
+        const finalURL = convertGifToMP4(url);
+        appendMedia(mediaBox, div, finalURL, "gif", post);
+        results.appendChild(div);
+        return;
+    }
+
+    /* ---------- REDDIT IMAGE VIA post_hint ---------- */
+    if (imgFilter.checked && post.post_hint === "image") {
+        appendMedia(mediaBox, div, url, "image", post);
+        results.appendChild(div);
+        return;
+    }
+
+    /* ---------- REDDIT VIDEO ---------- */
+    if (
+        vidFilter.checked &&
+        post.is_video &&
+        post.media?.reddit_video?.fallback_url
+    ) {
+        appendMedia(mediaBox, div, post.media.reddit_video.fallback_url, "video", post);
+        results.appendChild(div);
+        return;
+    }
+
+    /* ---------- FALLBACK ---------- */
+    if (otherFilter.checked) {
+        let a = document.createElement("a");
+        a.href = url;
+        a.textContent = url;
+        a.target = "_blank";
+        div.appendChild(a);
+        results.appendChild(div);
+    }
+}
+
+/* =========================================================
+   APPEND MEDIA
+   ========================================================= */
+
+function appendMedia(mediaBox, container, src, type, post) {
+    let el;
+
+    if (type === "gif" && src.endsWith(".gif")) {
+        el = document.createElement("img");
+        el.src = src;
+    } else if (type === "video" || type === "gif") {
+        el = document.createElement("video");
+        el.src = src;
+        el.controls = type === "video";
+        el.autoplay = type === "gif";
+        el.loop = type === "gif";
+        el.muted = type === "gif";
+    } else {
+        el = document.createElement("img");
+        el.src = src;
+    }
+
+    mediaBox.appendChild(el);
+
+    let urlLine = document.createElement("div");
+    urlLine.className = "post-url";
+    urlLine.textContent = post.url;
+
+    container.appendChild(mediaBox);
+    container.appendChild(urlLine);
+
+    postMediaList.push({
+        type,
+        src,
+        postId: post.id
+    });
+}
+
+/* =========================================================
+   APPEND IFRAME
+   ========================================================= */
+
+function appendIframe(mediaBox, container, src) {
+    const iframe = document.createElement("iframe");
+    iframe.src = src;
+    iframe.allow = "autoplay; encrypted-media";
+    mediaBox.appendChild(iframe);
+    container.appendChild(mediaBox);
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+scrollTopBtn.onclick = () =>
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+loadBtn.onclick = loadPosts;
+
+clearBtn.onclick = () => {
+    input.value = "";
+    results.innerHTML = "";
+    postMediaList = [];
+    postMediaIndex = {};
+};
+
+copyBtn.onclick = () =>
+    navigator.clipboard.writeText(input.value.trim());
+
+zipBtn.onclick = () =>
+    alert("ZIP downloads coming soon");
+
+/* END app.js v1.1.11 */
