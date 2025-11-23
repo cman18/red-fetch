@@ -1,11 +1,11 @@
 /* =========================================================
    app.js
-   Version: v1.1.24 — S1 3:4, title strip + tiny chevron
+   Version: v1.1.25 — 4:5 tiles + title strip (tiny chevron)
    ========================================================= */
 
 window.addEventListener("DOMContentLoaded", () => {
     const box = document.getElementById("js-version");
-    if (box) box.textContent = "v1.1.24";
+    if (box) box.textContent = "v1.1.25";
 });
 
 /* =========================================================
@@ -40,7 +40,7 @@ colToggleBtn.onclick = () => {
 };
 
 /* =========================================================
-   REDGIFS — FULL NEXT.JS HTML PARSE (WORKS 100%)
+   REDGIFS — FULL __NEXT_DATA__ PARSER
    ========================================================= */
 
 function isRedgifsURL(url) {
@@ -81,7 +81,9 @@ async function fetchRedgifsMP4(url) {
     try {
         const page = await fetch(watchURL, { mode: "cors" }).then(r => r.text());
 
-        const jsonMatch = page.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
+        const jsonMatch = page.match(
+            /<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/
+        );
         if (!jsonMatch) return null;
 
         const json = JSON.parse(jsonMatch[1]);
@@ -90,7 +92,6 @@ async function fetchRedgifsMP4(url) {
         const sd = json?.props?.pageProps?.gif?.urls?.sd;
 
         return hd || sd || null;
-
     } catch (err) {
         return null;
     }
@@ -119,7 +120,7 @@ function extractUsername(text) {
 }
 
 /* =========================================================
-   FILETYPE HELPERS
+   FILETYPE CHECKERS
    ========================================================= */
 
 function isGif(url) {
@@ -194,35 +195,35 @@ async function loadPosts() {
 }
 
 /* =========================================================
-   TITLE STRIP LOGIC (1-line collapsed, expand on chevron)
+   TITLE BEHAVIOR (1-line collapsed + tiny chevron)
    ========================================================= */
 
 function setupTitleBehavior(titleDiv) {
-    const fullText = titleDiv.textContent;
+    const text = titleDiv.textContent.trim();
 
-    // Temporarily switch to auto to measure full height
-    titleDiv.style.maxHeight = "none";
-    titleDiv.style.whiteSpace = "nowrap";
+    if (!text) return;
 
-    const oneLineHeight = titleDiv.clientHeight;
+    const measure = document.createElement("div");
+    measure.style.position = "absolute";
+    measure.style.visibility = "hidden";
+    measure.style.whiteSpace = "nowrap";
+    measure.style.fontSize = window.getComputedStyle(titleDiv).fontSize;
+    measure.textContent = text;
+    document.body.appendChild(measure);
 
-    titleDiv.style.whiteSpace = "normal";
-    const fullHeight = titleDiv.scrollHeight;
+    const fullWidth = measure.clientWidth;
+    measure.remove();
 
-    // Reset back to collapsed state
-    titleDiv.classList.remove("full");
-    titleDiv.style.whiteSpace = "nowrap";
-    titleDiv.style.maxHeight = "1.4em";
+    const containerWidth = titleDiv.clientWidth;
 
-    // If no overflow → no arrow
-    if (fullHeight <= oneLineHeight) {
+    if (fullWidth <= containerWidth) {
         return;
     }
 
-    // append chevron
     const arrow = document.createElement("span");
     arrow.className = "title-arrow";
-    arrow.textContent = "⌄";  // tiny downward chevron
+    arrow.textContent = "⌄";
+
     titleDiv.appendChild(arrow);
 
     arrow.onclick = (e) => {
@@ -230,38 +231,37 @@ function setupTitleBehavior(titleDiv) {
 
         const expanded = titleDiv.classList.toggle("full");
 
+        arrow.textContent = expanded ? "⌃" : "⌄";
+
         if (expanded) {
             titleDiv.style.whiteSpace = "normal";
-            titleDiv.style.maxHeight = fullHeight + "px";
-            arrow.textContent = "⌃";  // upward chevron
+            titleDiv.style.maxHeight = "400px";
         } else {
             titleDiv.style.whiteSpace = "nowrap";
             titleDiv.style.maxHeight = "1.4em";
-            arrow.textContent = "⌄";
         }
     };
 }
 
 /* =========================================================
-   RENDER POST — S1 3:4 layout
+   RENDER POST — unified 4:5 layout
    ========================================================= */
 
 async function renderPost(post) {
     const div = document.createElement("div");
     div.className = "post";
 
-    /* ----- title strip ----- */
     const titleDiv = document.createElement("div");
     titleDiv.className = "post-title";
     titleDiv.textContent = post.title || "";
     div.appendChild(titleDiv);
 
     const mediaBox = document.createElement("div");
-    mediaBox.className = "tile-media"; // fixed 3:4 container
+    mediaBox.className = "tile-media";
 
     const url = post.url || "";
 
-    /* ---------- Gallery ---------- */
+    /* ---------- Reddit Gallery ---------- */
     if (post.is_gallery && post.media_metadata && post.gallery_data) {
         const ids = post.gallery_data.items.map(x => x.media_id);
         const imgs = ids.map(id => {
@@ -270,15 +270,13 @@ async function renderPost(post) {
             return (meta.s.u || meta.s.gif || meta.s.mp4)?.replace(/&amp;/g, "&");
         }).filter(Boolean);
 
-        if (imgs.length) {
-            renderGallery(mediaBox, div, imgs, post);
-            setupTitleBehavior(titleDiv);
-            results.appendChild(div);
+        if (imgs.length > 0) {
+            renderGallery(mediaBox, div, imgs, post, titleDiv);
             return;
         }
     }
 
-    /* ---------- Image ---------- */
+    /* ---------- Direct image ---------- */
     if (imgFilter.checked && url.match(/\.(jpg|jpeg|png|webp)$/i)) {
         appendMedia(mediaBox, div, url, "image", post, titleDiv);
         return;
@@ -304,40 +302,13 @@ async function renderPost(post) {
         if (!id && m2) id = m2[1];
 
         if (id) {
-            appendIframe(mediaBox, div,
-                `https://www.youtube.com/embed/${id}`, titleDiv);
+            appendIframe(
+                mediaBox, div,
+                `https://www.youtube.com/embed/${id}`,
+                titleDiv
+            );
             return;
         }
-    }
-
-    /* ---------- Vimeo ---------- */
-    if (otherFilter.checked && url.includes("vimeo.com")) {
-        const m = url.match(/vimeo\.com\/(\d+)/);
-        if (m) {
-            appendIframe(mediaBox, div,
-                `https://player.vimeo.com/video/${m[1]}`, titleDiv);
-            return;
-        }
-    }
-
-    /* ---------- Twitch ---------- */
-    if (otherFilter.checked && url.includes("twitch.tv")) {
-        const m = url.match(/clip\/([^\/]+)/);
-        if (m) {
-            appendIframe(mediaBox, div,
-                `https://clips.twitch.tv/embed?clip=${m[1]}&parent=localhost`,
-                titleDiv);
-            return;
-        }
-    }
-
-    /* ---------- PornHub ---------- */
-    if (otherFilter.checked &&
-        (url.includes("pornhub.com") || url.includes("phncdn.com"))) {
-
-        appendIframe(mediaBox, div,
-            url.replace("view_video.php?viewkey=", "embed/"), titleDiv);
-        return;
     }
 
     /* ---------- GIF ---------- */
@@ -346,21 +317,23 @@ async function renderPost(post) {
         return;
     }
 
-    /* ---------- post_hint: image ---------- */
+    /* ---------- post_hint image ---------- */
     if (imgFilter.checked && post.post_hint === "image") {
         appendMedia(mediaBox, div, url, "image", post, titleDiv);
         return;
     }
 
-    /* ---------- Reddit Video ---------- */
+    /* ---------- Reddit video ---------- */
     if (
         vidFilter.checked &&
         post.is_video &&
         post.media?.reddit_video?.fallback_url
     ) {
-        appendMedia(mediaBox, div,
+        appendMedia(
+            mediaBox, div,
             post.media.reddit_video.fallback_url,
-            "video", post, titleDiv);
+            "video", post, titleDiv
+        );
         return;
     }
 
@@ -369,7 +342,6 @@ async function renderPost(post) {
     const placeholder = document.createElement("div");
     placeholder.className = "placeholder-media";
     placeholder.textContent = "Text Post";
-
     mediaBox.appendChild(placeholder);
 
     const urlLine = document.createElement("div");
@@ -384,10 +356,10 @@ async function renderPost(post) {
 }
 
 /* =========================================================
-   GALLERY (main page)
+   GALLERY
    ========================================================= */
 
-function renderGallery(mediaBox, container, images, post) {
+function renderGallery(mediaBox, container, images, post, titleDiv) {
     let index = 0;
 
     const img = document.createElement("img");
@@ -427,8 +399,8 @@ function renderGallery(mediaBox, container, images, post) {
     container.appendChild(mediaBox);
     container.appendChild(urlLine);
 
-    const titleDiv = container.querySelector(".post-title");
     setupTitleBehavior(titleDiv);
+    results.appendChild(container);
 }
 
 /* =========================================================
@@ -495,12 +467,14 @@ function closeFullscreenGallery() {
 
 function fullscreenKeyHandler(e) {
     if (e.key === "Escape") return closeFullscreenGallery();
+
     if (!fullscreenImages.length) return;
 
     if (e.key === "ArrowRight") {
         fullscreenIndex = (fullscreenIndex + 1) % fullscreenImages.length;
         fullscreenImg.src = fullscreenImages[fullscreenIndex];
     }
+
     if (e.key === "ArrowLeft") {
         fullscreenIndex =
             (fullscreenIndex - 1 + fullscreenImages.length) %
@@ -510,7 +484,7 @@ function fullscreenKeyHandler(e) {
 }
 
 /* =========================================================
-   Generic Media + Iframe
+   Generic Media / Iframe
    ========================================================= */
 
 function appendMedia(mediaBox, container, src, type, post, titleDiv) {
@@ -576,4 +550,4 @@ copyBtn.onclick = () =>
 zipBtn.onclick = () =>
     alert("ZIP downloads coming soon");
 
-/* END app.js v1.1.24 */
+/* END app.js v1.1.25 */
