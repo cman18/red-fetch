@@ -1,11 +1,11 @@
 /* =========================================================
    app.js
-   Version: v1.1.12 — Full Gallery + Fullscreen Support
+   Version: v1.1.20 — Modern Reddit-style Grid (A2+C1+3col)
    ========================================================= */
 
 window.addEventListener("DOMContentLoaded", () => {
     const box = document.getElementById("js-version");
-    if (box) box.textContent = "v1.1.12";
+    if (box) box.textContent = "v1.1.20";
 });
 
 /* =========================================================
@@ -68,6 +68,7 @@ async function fetchRedgifsMP4(url) {
                 if (vid && vid.src.startsWith("https")) {
                     clearInterval(iv);
                     resolve(vid.src);
+                    iframe.remove();
                     return;
                 }
             } catch (e) {}
@@ -75,6 +76,7 @@ async function fetchRedgifsMP4(url) {
             tries++;
             if (tries > maxTries) {
                 clearInterval(iv);
+                iframe.remove();
                 resolve(null);
             }
         }, 350);
@@ -184,28 +186,29 @@ async function loadPosts() {
 }
 
 /* =========================================================
-   RENDER POST (WITH GALLERY SUPPORT)
+   RENDER POST — A2 Layout (Title above media)
    ========================================================= */
 
 async function renderPost(post) {
     const div = document.createElement("div");
     div.className = "post";
 
+    /* ----- Title ----- */
     const title = document.createElement("div");
-    title.textContent = post.title;
-    title.style.marginBottom = "12px";
+    title.className = "post-title";
+    title.textContent = post.title || "(no title)";
     div.appendChild(title);
 
+    /* Media container */
     const mediaBox = document.createElement("div");
     mediaBox.className = "tile-media";
 
     const url = post.url || "";
 
-    /* ---------- 1. Reddit Gallery ---------- */
+    /* ---------- Reddit Gallery ---------- */
     if (post.is_gallery && post.media_metadata && post.gallery_data) {
-        const ids = post.gallery_data.items
-            .map(x => x.media_id)
-            .filter(Boolean);
+
+        const ids = post.gallery_data.items.map(x => x.media_id).filter(Boolean);
 
         const imgs = ids.map(id => {
             const meta = post.media_metadata[id];
@@ -222,14 +225,14 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- 2. Direct image ---------- */
+    /* ---------- Direct Image ---------- */
     if (imgFilter.checked && url.match(/\.(jpg|jpeg|png|webp)$/i)) {
         appendMedia(mediaBox, div, url, "image", post);
         results.appendChild(div);
         return;
     }
 
-    /* ---------- 3. Redgifs ---------- */
+    /* ---------- Redgifs ---------- */
     if (imgFilter.checked && isRedgifsURL(url)) {
         const mp4 = await fetchRedgifsMP4(url);
         if (mp4) {
@@ -237,12 +240,12 @@ async function renderPost(post) {
             results.appendChild(div);
             return;
         }
-        div.appendChild(errBox("Could not load RedGifs"));
+        div.appendChild(errorBox("Could not load RedGifs"));
         results.appendChild(div);
         return;
     }
 
-    /* ---------- 4. YouTube ---------- */
+    /* ---------- YouTube ---------- */
     if (otherFilter.checked &&
         (url.includes("youtube.com") || url.includes("youtu.be"))) {
 
@@ -260,7 +263,7 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- 5. Vimeo ---------- */
+    /* ---------- Vimeo ---------- */
     if (otherFilter.checked && url.includes("vimeo.com")) {
         const m = url.match(/vimeo\.com\/(\d+)/);
         if (m) {
@@ -271,7 +274,7 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- 6. Twitch ---------- */
+    /* ---------- Twitch ---------- */
     if (otherFilter.checked && url.includes("twitch.tv")) {
         const m = url.match(/clip\/([^\/]+)/);
         if (m) {
@@ -282,7 +285,7 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- 7. Pornhub ---------- */
+    /* ---------- Pornhub ---------- */
     if (otherFilter.checked &&
         (url.includes("pornhub.com") || url.includes("phncdn.com"))) {
         appendIframe(mediaBox, div,
@@ -291,7 +294,7 @@ async function renderPost(post) {
         return;
     }
 
-    /* ---------- 8. Redtube ---------- */
+    /* ---------- RedTube ---------- */
     if (otherFilter.checked && url.includes("redtube.com")) {
         const m = url.match(/redtube\.com\/(\d+)/);
         if (m) {
@@ -302,7 +305,7 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- 9. Twitter/X ---------- */
+    /* ---------- Twitter/X ---------- */
     if (otherFilter.checked && url.includes("twitter.com")) {
         appendIframe(mediaBox, div,
             url.replace("twitter.com", "twitframe.com"));
@@ -310,21 +313,21 @@ async function renderPost(post) {
         return;
     }
 
-    /* ---------- 10. GIF ---------- */
+    /* ---------- GIF ---------- */
     if (imgFilter.checked && isGif(url)) {
         appendMedia(mediaBox, div, convertGifToMP4(url), "gif", post);
         results.appendChild(div);
         return;
     }
 
-    /* ---------- 11. post_hint: image ---------- */
+    /* ---------- post_hint image ---------- */
     if (imgFilter.checked && post.post_hint === "image") {
         appendMedia(mediaBox, div, url, "image", post);
         results.appendChild(div);
         return;
     }
 
-    /* ---------- 12. Reddit video ---------- */
+    /* ---------- Reddit video ---------- */
     if (
         vidFilter.checked &&
         post.is_video &&
@@ -339,7 +342,7 @@ async function renderPost(post) {
         return;
     }
 
-    /* ---------- 13. Fallback ---------- */
+    /* ---------- Fallback ---------- */
     if (otherFilter.checked) {
         const a = document.createElement("a");
         a.href = url;
@@ -351,7 +354,7 @@ async function renderPost(post) {
 }
 
 /* =========================================================
-   GALLERY (MAIN TILE) + FULLSCREEN
+   GALLERY (Main Tile) — With A2 UI
    ========================================================= */
 
 function renderGallery(mediaBox, container, images, post) {
@@ -545,6 +548,6 @@ copyBtn.onclick = () =>
     navigator.clipboard.writeText(input.value.trim());
 
 zipBtn.onclick = () =>
-    alert("ZIP downloads coming soon");
+    alert("ZIP downloads will be added soon");  // no zip until fixed
 
-/* END app.js v1.1.12 */
+/* END app.js v1.1.20 */
