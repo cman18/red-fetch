@@ -1,6 +1,6 @@
 /* =========================================================
    app.js
-   Version: v1.1.12 — Adds Reddit Gallery Support
+   Version: v1.1.12 — Full Gallery + Fullscreen Support
    ========================================================= */
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -34,10 +34,12 @@ function extractRedgifsSlug(url) {
         /redgifs\.com\/ifr\/([A-Za-z0-9]+)/,
         /\/([A-Za-z0-9]+)$/
     ];
+
     for (let p of patterns) {
         let m = url.match(p);
         if (m) return m[1];
     }
+
     return null;
 }
 
@@ -58,17 +60,20 @@ async function fetchRedgifsMP4(url) {
         document.body.appendChild(iframe);
 
         let tries = 0;
+        const maxTries = 50;
+
         const iv = setInterval(() => {
             try {
                 const vid = iframe.contentDocument?.querySelector("video");
                 if (vid && vid.src.startsWith("https")) {
                     clearInterval(iv);
                     resolve(vid.src);
+                    return;
                 }
             } catch (e) {}
 
             tries++;
-            if (tries > 50) {
+            if (tries > maxTries) {
                 clearInterval(iv);
                 resolve(null);
             }
@@ -77,7 +82,7 @@ async function fetchRedgifsMP4(url) {
 }
 
 /* =========================================================
-   USERNAME EXTRACTION
+   USERNAME PARSER
    ========================================================= */
 
 function extractUsername(text) {
@@ -94,6 +99,7 @@ function extractUsername(text) {
     if (m) return m[1];
 
     if (/^[A-Za-z0-9_-]{2,30}$/.test(text)) return text;
+
     return null;
 }
 
@@ -148,6 +154,7 @@ async function loadPosts() {
 
     const raw = input.value.trim();
     const username = extractUsername(raw);
+
     if (!username) {
         results.innerHTML = "<div class='post'>Invalid username or URL.</div>";
         return;
@@ -172,13 +179,12 @@ async function loadPosts() {
         }
 
     } catch (err) {
-        results.innerHTML =
-            `<div class='post'>Error loading posts: ${err.message}</div>`;
+        results.innerHTML = `<div class='post'>Error loading posts: ${err.message}</div>`;
     }
 }
 
 /* =========================================================
-   RENDER POST + GALLERY SUPPORT
+   RENDER POST (WITH GALLERY SUPPORT)
    ========================================================= */
 
 async function renderPost(post) {
@@ -195,34 +201,35 @@ async function renderPost(post) {
 
     const url = post.url || "";
 
-    /* ---------- 1. Reddit Gallery (NEW) ---------- */
-    if (post.is_gallery && post.gallery_data && post.media_metadata) {
-        const galleryItems =
-            post.gallery_data.items.map(x => x.media_id).filter(Boolean);
+    /* ---------- 1. Reddit Gallery ---------- */
+    if (post.is_gallery && post.media_metadata && post.gallery_data) {
+        const ids = post.gallery_data.items
+            .map(x => x.media_id)
+            .filter(Boolean);
 
-        const images = galleryItems.map(id => {
-            const item = post.media_metadata[id];
-            if (!item) return null;
-            let src = item.s?.u || item.s?.gif || item.s?.mp4;
+        const imgs = ids.map(id => {
+            const meta = post.media_metadata[id];
+            if (!meta || !meta.s) return null;
+            let src = meta.s.u || meta.s.gif || meta.s.mp4;
             if (!src) return null;
             return src.replace(/&amp;/g, "&");
         }).filter(Boolean);
 
-        if (images.length) {
-            renderGallery(mediaBox, div, images, post);
+        if (imgs.length) {
+            renderGallery(mediaBox, div, imgs, post);
             results.appendChild(div);
             return;
         }
     }
 
-    /* ---------- 2. Direct Images (.jpg/.png/.webp) ---------- */
+    /* ---------- 2. Direct image ---------- */
     if (imgFilter.checked && url.match(/\.(jpg|jpeg|png|webp)$/i)) {
         appendMedia(mediaBox, div, url, "image", post);
         results.appendChild(div);
         return;
     }
 
-    /* ---------- 3. RedGifs ---------- */
+    /* ---------- 3. Redgifs ---------- */
     if (imgFilter.checked && isRedgifsURL(url)) {
         const mp4 = await fetchRedgifsMP4(url);
         if (mp4) {
@@ -246,7 +253,8 @@ async function renderPost(post) {
         if (!id && m2) id = m2[1];
 
         if (id) {
-            appendIframe(mediaBox, div, `https://www.youtube.com/embed/${id}`);
+            appendIframe(mediaBox, div,
+                `https://www.youtube.com/embed/${id}`);
             results.appendChild(div);
             return;
         }
@@ -254,9 +262,10 @@ async function renderPost(post) {
 
     /* ---------- 5. Vimeo ---------- */
     if (otherFilter.checked && url.includes("vimeo.com")) {
-        let m = url.match(/vimeo\.com\/(\d+)/);
+        const m = url.match(/vimeo\.com\/(\d+)/);
         if (m) {
-            appendIframe(mediaBox, div, `https://player.vimeo.com/video/${m[1]}`);
+            appendIframe(mediaBox, div,
+                `https://player.vimeo.com/video/${m[1]}`);
             results.appendChild(div);
             return;
         }
@@ -264,7 +273,7 @@ async function renderPost(post) {
 
     /* ---------- 6. Twitch ---------- */
     if (otherFilter.checked && url.includes("twitch.tv")) {
-        let m = url.match(/clip\/([^/?]+)/);
+        const m = url.match(/clip\/([^\/]+)/);
         if (m) {
             appendIframe(mediaBox, div,
                 `https://clips.twitch.tv/embed?clip=${m[1]}&parent=localhost`);
@@ -284,7 +293,7 @@ async function renderPost(post) {
 
     /* ---------- 8. Redtube ---------- */
     if (otherFilter.checked && url.includes("redtube.com")) {
-        let m = url.match(/redtube\.com\/(\d+)/);
+        const m = url.match(/redtube\.com\/(\d+)/);
         if (m) {
             appendIframe(mediaBox, div,
                 `https://embed.redtube.com/?id=${m[1]}&bgcolor=000000`);
@@ -308,7 +317,7 @@ async function renderPost(post) {
         return;
     }
 
-    /* ---------- 11. post_hint image ---------- */
+    /* ---------- 11. post_hint: image ---------- */
     if (imgFilter.checked && post.post_hint === "image") {
         appendMedia(mediaBox, div, url, "image", post);
         results.appendChild(div);
@@ -321,14 +330,18 @@ async function renderPost(post) {
         post.is_video &&
         post.media?.reddit_video?.fallback_url
     ) {
-        appendMedia(mediaBox, div, post.media.reddit_video.fallback_url, "video", post);
+        appendMedia(mediaBox, div,
+            post.media.reddit_video.fallback_url,
+            "video",
+            post
+        );
         results.appendChild(div);
         return;
     }
 
     /* ---------- 13. Fallback ---------- */
     if (otherFilter.checked) {
-        let a = document.createElement("a");
+        const a = document.createElement("a");
         a.href = url;
         a.textContent = url;
         a.target = "_blank";
@@ -338,7 +351,7 @@ async function renderPost(post) {
 }
 
 /* =========================================================
-   GALLERY RENDER + ARROWS
+   GALLERY (MAIN TILE) + FULLSCREEN
    ========================================================= */
 
 function renderGallery(mediaBox, container, images, post) {
@@ -346,6 +359,8 @@ function renderGallery(mediaBox, container, images, post) {
 
     const img = document.createElement("img");
     img.src = images[0];
+
+    img.onclick = () => openFullscreenGallery(images, index);
 
     const left = document.createElement("div");
     left.className = "gallery-arrow-main gallery-arrow-main-left";
@@ -359,13 +374,13 @@ function renderGallery(mediaBox, container, images, post) {
         img.src = images[index];
     };
 
-    left.onclick = (ev) => {
+    left.onclick = ev => {
         ev.stopPropagation();
         index = (index - 1 + images.length) % images.length;
         update();
     };
 
-    right.onclick = (ev) => {
+    right.onclick = ev => {
         ev.stopPropagation();
         index = (index + 1) % images.length;
         update();
@@ -375,8 +390,7 @@ function renderGallery(mediaBox, container, images, post) {
     mediaBox.appendChild(left);
     mediaBox.appendChild(right);
 
-    // Add URL under tile
-    let urlLine = document.createElement("div");
+    const urlLine = document.createElement("div");
     urlLine.className = "post-url";
     urlLine.textContent = post.url;
 
@@ -385,7 +399,87 @@ function renderGallery(mediaBox, container, images, post) {
 }
 
 /* =========================================================
-   IFRAME + MEDIA HELPERS
+   FULLSCREEN GALLERY
+   ========================================================= */
+
+let fullscreenOverlay = null;
+let fullscreenImg = null;
+let fullscreenIndex = 0;
+let fullscreenImages = [];
+
+function openFullscreenGallery(images, startIndex = 0) {
+    fullscreenImages = images;
+    fullscreenIndex = startIndex;
+
+    fullscreenOverlay = document.createElement("div");
+    fullscreenOverlay.className = "fullscreen-media";
+
+    fullscreenImg = document.createElement("img");
+    fullscreenImg.src = fullscreenImages[fullscreenIndex];
+
+    const left = document.createElement("div");
+    left.className = "gallery-arrow gallery-arrow-left";
+    left.textContent = "<";
+
+    const right = document.createElement("div");
+    right.className = "gallery-arrow gallery-arrow-right";
+    right.textContent = ">";
+
+    left.onclick = e => {
+        e.stopPropagation();
+        fullscreenIndex =
+            (fullscreenIndex - 1 + fullscreenImages.length) %
+            fullscreenImages.length;
+        fullscreenImg.src = fullscreenImages[fullscreenIndex];
+    };
+
+    right.onclick = e => {
+        e.stopPropagation();
+        fullscreenIndex =
+            (fullscreenIndex + 1) % fullscreenImages.length;
+        fullscreenImg.src = fullscreenImages[fullscreenIndex];
+    };
+
+    fullscreenOverlay.onclick = () => closeFullscreenGallery();
+
+    fullscreenOverlay.appendChild(fullscreenImg);
+    fullscreenOverlay.appendChild(left);
+    fullscreenOverlay.appendChild(right);
+    document.body.appendChild(fullscreenOverlay);
+
+    document.addEventListener("keydown", fullscreenKeyHandler);
+}
+
+function closeFullscreenGallery() {
+    if (!fullscreenOverlay) return;
+    fullscreenOverlay.remove();
+    fullscreenOverlay = null;
+    fullscreenImg = null;
+    fullscreenImages = [];
+    fullscreenIndex = 0;
+    document.removeEventListener("keydown", fullscreenKeyHandler);
+}
+
+function fullscreenKeyHandler(e) {
+    if (e.key === "Escape") {
+        closeFullscreenGallery();
+        return;
+    }
+    if (e.key === "ArrowRight") {
+        fullscreenIndex =
+            (fullscreenIndex + 1) % fullscreenImages.length;
+        fullscreenImg.src = fullscreenImages[fullscreenIndex];
+    }
+    if (e.key === "ArrowLeft") {
+        fullscreenIndex =
+            (fullscreenIndex - 1 + fullscreenImages.length) %
+            fullscreenImages.length;
+        fullscreenImg.src = fullscreenImages[fullscreenIndex];
+    }
+}
+
+/* =========================================================
+   GENERIC MEDIA + IFRAME
    ========================================================= */
 
 function appendMedia(mediaBox, container, src, type, post) {
@@ -408,7 +502,7 @@ function appendMedia(mediaBox, container, src, type, post) {
 
     mediaBox.appendChild(el);
 
-    let urlLine = document.createElement("div");
+    const urlLine = document.createElement("div");
     urlLine.className = "post-url";
     urlLine.textContent = post.url;
 
