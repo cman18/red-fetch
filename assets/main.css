@@ -1,6 +1,6 @@
 /* =========================================================
    main.css
-   Version: v1.1.20 — A2 + C1 + 3-column + 16:9 layout
+   Version: v1.1.21 — A2 + C1 + 3/2/1 responsive + T1 placeholders
    ========================================================= */
 
 body {
@@ -66,19 +66,44 @@ button:hover {
 }
 
 /* =========================================================
-   3-COLUMN GRID — Clean Reddit-style (C1)
+   Grid layout — Responsive (R1)
+   Desktop: 3 columns
+   Tablet: 2 columns
+   Phone: 1 column
+   PLUS manual override we apply in JS
    ========================================================= */
 
 .grid-results {
     max-width: 1300px;
     margin: 40px auto;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, 1fr); /* default desktop */
     gap: 22px;
 }
 
+@media (max-width: 1120px) {
+    .grid-results {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 620px) {
+    .grid-results {
+        grid-template-columns: repeat(1, 1fr);
+    }
+}
+
+/* Manual override classes added via JS */
+.force-3-cols {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+.force-2-cols {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
 /* =========================================================
-   POST CARD (A2 style)
+   POST CARD (A2)
    ========================================================= */
 
 .post {
@@ -90,7 +115,6 @@ button:hover {
     flex-direction: column;
 }
 
-/* Title at top, before media */
 .post-title {
     font-size: 15px;
     margin-bottom: 10px;
@@ -99,19 +123,18 @@ button:hover {
 }
 
 /* =========================================================
-   16:9 Thumbnail container
+   16:9 MEDIA TILE
    ========================================================= */
 
 .tile-media {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 16/9;
     background: #000;
     border-radius: 10px;
     overflow: hidden;
 }
 
-/* Always cover full card */
 .tile-media img,
 .tile-media video,
 .tile-media iframe {
@@ -121,8 +144,18 @@ button:hover {
     display: block;
 }
 
+/* Placeholder for text-only posts (T1) */
+.placeholder-media {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    color: #7cd;
+    background: #000;
+}
+
 /* =========================================================
-   Gallery arrows (main page)
+   MAIN-PAGE GALLERY ARROWS
    ========================================================= */
 
 .gallery-arrow-main {
@@ -139,16 +172,11 @@ button:hover {
     z-index: 20;
 }
 
-.gallery-arrow-main-left {
-    left: 6px;
-}
-
-.gallery-arrow-main-right {
-    right: 6px;
-}
+.gallery-arrow-main-left { left: 6px; }
+.gallery-arrow-main-right { right: 6px; }
 
 /* =========================================================
-   Post URL
+   POST URL
    ========================================================= */
 
 .post-url {
@@ -178,7 +206,6 @@ button:hover {
     max-height: 95%;
 }
 
-/* Arrows in fullscreen */
 .gallery-arrow {
     position: absolute;
     top: 50%;
@@ -192,13 +219,8 @@ button:hover {
     z-index: 100000;
 }
 
-.gallery-arrow-left {
-    left: 30px;
-}
-
-.gallery-arrow-right {
-    right: 30px;
-}
+.gallery-arrow-left { left: 30px; }
+.gallery-arrow-right { right: 30px; }
 
 /* =========================================================
    Scroll-to-top button
@@ -223,7 +245,10 @@ button:hover {
     filter: brightness(1.1);
 }
 
-/* Version box */
+/* =========================================================
+   Version box
+   ========================================================= */
+
 #debug-version-box {
     position: fixed;
     top: 10px;
