@@ -1,11 +1,11 @@
 /* =========================================================
    app.js
-   Version: v1.1.21 — A2 + C1 + 3/2/1 responsive + toggle + T1
+   Version: v1.1.22 — S1 (3:4), A2, C1, R1+R2, T1
    ========================================================= */
 
 window.addEventListener("DOMContentLoaded", () => {
     const box = document.getElementById("js-version");
-    if (box) box.textContent = "v1.1.21";
+    if (box) box.textContent = "v1.1.22";
 });
 
 /* =========================================================
@@ -15,10 +15,7 @@ window.addEventListener("DOMContentLoaded", () => {
 const resultsGrid = document.getElementById("results");
 const colToggleBtn = document.getElementById("colToggleBtn");
 
-let forcedMode = null; 
-// null = auto responsive (R1)
-// "2"   = force 2-column
-// "3"   = force 3-column
+let forcedMode = null;
 
 function applyColumnMode() {
     resultsGrid.classList.remove("force-3-cols", "force-2-cols");
@@ -28,6 +25,8 @@ function applyColumnMode() {
         colToggleBtn.textContent = "Columns: 2";
     } else if (forcedMode === "3") {
         resultsGrid.classList.add("force-3-cols");
+        colToggleBtn.textContent = "Columns: 3";
+    } else {
         colToggleBtn.textContent = "Columns: 3";
     }
 }
@@ -69,14 +68,13 @@ function extractRedgifsSlug(url) {
     ];
 
     for (let p of patterns) {
-        let m = url.match(p);
+        const m = url.match(p);
         if (m) return m[1];
     }
 
     return null;
 }
 
-/* NEW: Silent background Redgifs fetch, no popup */
 async function fetchRedgifsMP4(url) {
     const slug = extractRedgifsSlug(url);
     if (!slug) return null;
@@ -84,7 +82,6 @@ async function fetchRedgifsMP4(url) {
     try {
         const api = `https://api.redgifs.com/v2/gifs/${slug}`;
         const res = await fetch(api);
-
         if (!res.ok) return null;
 
         const data = await res.json();
@@ -125,13 +122,12 @@ function isGif(url) {
     return (
         url.endsWith(".gif") ||
         url.endsWith(".gifv") ||
-        (url.includes("imgur.com") && url.match(/\.gifv?$/)) ||
-        url.includes("gfycat")
+        url.includes("gfycat") ||
+        (url.includes("imgur.com") && url.match(/\.gifv?$/))
     );
 }
 
 function convertGifToMP4(url) {
-    if (url.includes("i.redd.it") && url.endsWith(".gif")) return url;
     if (url.endsWith(".gifv")) return url.replace(".gifv", ".mp4");
     if (url.endsWith(".gif")) return url.replace(".gif", ".mp4");
     return url;
@@ -173,7 +169,6 @@ async function loadPosts() {
     try {
         const url = `https://api.reddit.com/user/${username}/submitted?raw_json=1`;
         const res = await fetch(url);
-
         if (!res.ok) throw new Error("Reddit blocked fetch");
 
         const data = await res.json();
@@ -184,7 +179,7 @@ async function loadPosts() {
             return;
         }
 
-        for (let p of posts) {
+        for (const p of posts) {
             await renderPost(p.data);
         }
 
@@ -194,20 +189,21 @@ async function loadPosts() {
 }
 
 /* =========================================================
-   RENDER POST — A2 Layout
+   RENDER POST — S1 (3:4 crop-to-fill)
    ========================================================= */
 
 async function renderPost(post) {
     const div = document.createElement("div");
     div.className = "post";
 
+    /* title */
     const title = document.createElement("div");
     title.className = "post-title";
     title.textContent = post.title || "(no title)";
     div.appendChild(title);
 
     const mediaBox = document.createElement("div");
-    mediaBox.className = "tile-media";
+    mediaBox.className = "tile-media"; // 3:4 enforced
 
     const url = post.url || "";
 
@@ -217,7 +213,7 @@ async function renderPost(post) {
 
         const imgs = ids.map(id => {
             const meta = post.media_metadata[id];
-            if (!meta || !meta.s) return null;
+            if (!meta?.s) return null;
             let src = meta.s.u || meta.s.gif || meta.s.mp4;
             return src ? src.replace(/&amp;/g, "&") : null;
         }).filter(Boolean);
@@ -229,7 +225,7 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- Direct images ---------- */
+    /* ---------- Direct Image ---------- */
     if (imgFilter.checked && url.match(/\.(jpg|jpeg|png|webp)$/i)) {
         appendMedia(mediaBox, div, url, "image", post);
         results.appendChild(div);
@@ -286,16 +282,6 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- PornHub ---------- */
-    if (otherFilter.checked &&
-        (url.includes("pornhub.com") || url.includes("phncdn.com"))) {
-
-        appendIframe(mediaBox, div,
-            url.replace("view_video.php?viewkey=", "embed/"));
-        results.appendChild(div);
-        return;
-    }
-
     /* ---------- RedTube ---------- */
     if (otherFilter.checked && url.includes("redtube.com")) {
         const m = url.match(/redtube\.com\/(\d+)/);
@@ -307,6 +293,16 @@ async function renderPost(post) {
         }
     }
 
+    /* ---------- PornHub ---------- */
+    if (otherFilter.checked &&
+        (url.includes("pornhub.com") || url.includes("phncdn.com"))) {
+
+        appendIframe(mediaBox, div,
+            url.replace("view_video.php?viewkey=", "embed/"));
+        results.appendChild(div);
+        return;
+    }
+
     /* ---------- Twitter/X ---------- */
     if (otherFilter.checked && url.includes("twitter.com")) {
         appendIframe(mediaBox, div,
@@ -315,7 +311,7 @@ async function renderPost(post) {
         return;
     }
 
-    /* ---------- GIF → MP4 ---------- */
+    /* ---------- GIF ---------- */
     if (imgFilter.checked && isGif(url)) {
         appendMedia(mediaBox, div, convertGifToMP4(url), "gif", post);
         results.appendChild(div);
@@ -329,17 +325,14 @@ async function renderPost(post) {
         return;
     }
 
-    /* ---------- Reddit video ---------- */
+    /* ---------- Reddit Video ---------- */
     if (
         vidFilter.checked &&
         post.is_video &&
         post.media?.reddit_video?.fallback_url
     ) {
         appendMedia(mediaBox, div,
-            post.media.reddit_video.fallback_url,
-            "video",
-            post
-        );
+            post.media.reddit_video.fallback_url, "video", post);
         results.appendChild(div);
         return;
     }
@@ -347,6 +340,7 @@ async function renderPost(post) {
     /* =====================================================
        TEXT-ONLY POST (T1)
        ===================================================== */
+
     const placeholder = document.createElement("div");
     placeholder.className = "placeholder-media";
     placeholder.textContent = "Text Post";
@@ -356,6 +350,7 @@ async function renderPost(post) {
     const urlLine = document.createElement("div");
     urlLine.className = "post-url";
     urlLine.textContent = url;
+
     div.appendChild(mediaBox);
     div.appendChild(urlLine);
 
@@ -363,7 +358,7 @@ async function renderPost(post) {
 }
 
 /* =========================================================
-   GALLERY (Main Page)
+   GALLERY (main page)
    ========================================================= */
 
 function renderGallery(mediaBox, container, images, post) {
@@ -371,7 +366,6 @@ function renderGallery(mediaBox, container, images, post) {
 
     const img = document.createElement("img");
     img.src = images[0];
-
     img.onclick = () => openFullscreenGallery(images, index);
 
     const left = document.createElement("div");
@@ -497,10 +491,7 @@ function fullscreenKeyHandler(e) {
 function appendMedia(mediaBox, container, src, type, post) {
     let el;
 
-    if (type === "gif" && src.endsWith(".gif")) {
-        el = document.createElement("img");
-        el.src = src;
-    } else if (type === "video" || type === "gif") {
+    if (type === "video" || type === "gif") {
         el = document.createElement("video");
         el.src = src;
         el.controls = type === "video";
@@ -556,4 +547,4 @@ copyBtn.onclick = () =>
 zipBtn.onclick = () =>
     alert("ZIP downloads will be added soon");
 
-/* END app.js v1.1.21 */
+/* END app.js v1.1.22 */
