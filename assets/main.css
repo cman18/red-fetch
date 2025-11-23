@@ -1,6 +1,6 @@
 /* =========================================================
    main.css
-   Version: v1.1.21 — A2 + C1 + 3/2/1 responsive + T1 placeholders
+   Version: v1.1.22 — S1 (3:4), A2, C1, R1+R2, T1
    ========================================================= */
 
 body {
@@ -66,18 +66,14 @@ button:hover {
 }
 
 /* =========================================================
-   Grid layout — Responsive (R1)
-   Desktop: 3 columns
-   Tablet: 2 columns
-   Phone: 1 column
-   PLUS manual override we apply in JS
+   Grid layout — Responsive base + override
    ========================================================= */
 
 .grid-results {
     max-width: 1300px;
     margin: 40px auto;
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* default desktop */
+    grid-template-columns: repeat(3, 1fr);
     gap: 22px;
 }
 
@@ -93,7 +89,7 @@ button:hover {
     }
 }
 
-/* Manual override classes added via JS */
+/* override modes from JS */
 .force-3-cols {
     grid-template-columns: repeat(3, 1fr) !important;
 }
@@ -103,7 +99,7 @@ button:hover {
 }
 
 /* =========================================================
-   POST CARD (A2)
+   CARD (A2)
    ========================================================= */
 
 .post {
@@ -123,39 +119,43 @@ button:hover {
 }
 
 /* =========================================================
-   16:9 MEDIA TILE
+   3:4 MEDIA TILE — S1
    ========================================================= */
 
 .tile-media {
     position: relative;
     width: 100%;
-    aspect-ratio: 16/9;
+    aspect-ratio: 3/4; /* EXACTLY as screenshot */
     background: #000;
     border-radius: 10px;
     overflow: hidden;
 }
 
+/* ALL media crops neatly */
 .tile-media img,
 .tile-media video,
 .tile-media iframe {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: cover; /* S1 crop-to-fill */
     display: block;
 }
 
-/* Placeholder for text-only posts (T1) */
+/* Placeholder for text-only posts */
 .placeholder-media {
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 28px;
+    font-size: 26px;
     color: #7cd;
     background: #000;
+    object-fit: cover;
 }
 
 /* =========================================================
-   MAIN-PAGE GALLERY ARROWS
+   Gallery arrows
    ========================================================= */
 
 .gallery-arrow-main {
@@ -176,7 +176,7 @@ button:hover {
 .gallery-arrow-main-right { right: 6px; }
 
 /* =========================================================
-   POST URL
+   Post URL
    ========================================================= */
 
 .post-url {
@@ -187,7 +187,7 @@ button:hover {
 }
 
 /* =========================================================
-   FULLSCREEN VIEWER
+   Fullscreen (unchanged)
    ========================================================= */
 
 .fullscreen-media {
@@ -223,7 +223,7 @@ button:hover {
 .gallery-arrow-right { right: 30px; }
 
 /* =========================================================
-   Scroll-to-top button
+   Scroll-to-top
    ========================================================= */
 
 #scrollTopBtn {
@@ -245,10 +245,7 @@ button:hover {
     filter: brightness(1.1);
 }
 
-/* =========================================================
-   Version box
-   ========================================================= */
-
+/* version box */
 #debug-version-box {
     position: fixed;
     top: 10px;
