@@ -1,6 +1,6 @@
 /* =========================================================
    main.css
-   Version: v1.1.25 — 4:5 tiles + title chevron
+   Version: v1.1.27 — 4:5 tiles + title strip + fixed videos
    ========================================================= */
 
 body {
@@ -107,7 +107,7 @@ button:hover {
 }
 
 /* =========================================================
-   Title strip (1-line)
+   Title strip (1-line) + tiny chevron
    ========================================================= */
 
 .post-title {
@@ -127,7 +127,6 @@ button:hover {
     max-height: 400px;
 }
 
-/* tiny chevron */
 .title-arrow {
     font-size: 12px;
     margin-left: 6px;
@@ -136,27 +135,34 @@ button:hover {
 }
 
 /* =========================================================
-   MEDIA TILE — corrected 4:5
+   Media Tile — 4:5 ratio
    ========================================================= */
 
 .tile-media {
     position: relative;
     width: 100%;
-    aspect-ratio: 4 / 5; /* ♥ FINAL RATIO FIX ♥ */
+    aspect-ratio: 4 / 5;
     background: #000;
     border-radius: 10px;
     overflow: hidden;
 }
 
+/* Images, iframes already correct */
 .tile-media img,
-.tile-media video,
 .tile-media iframe {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-/* Text placeholder also 4:5 now */
+/* NEW: reinforce scaling for videos specifically */
+.tile-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Text placeholder now 4:5 also */
 .placeholder-media {
     width: 100%;
     height: 100%;
@@ -169,7 +175,7 @@ button:hover {
 }
 
 /* =========================================================
-   Galleries
+   Gallery arrows
    ========================================================= */
 
 .gallery-arrow-main {
@@ -189,7 +195,7 @@ button:hover {
 .gallery-arrow-main-right { right: 6px; }
 
 /* =========================================================
-   URL under tile
+   URL text
    ========================================================= */
 
 .post-url {
@@ -200,7 +206,7 @@ button:hover {
 }
 
 /* =========================================================
-   Fullscreen
+   Fullscreen viewer
    ========================================================= */
 
 .fullscreen-media {
