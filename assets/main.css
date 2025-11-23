@@ -1,6 +1,6 @@
 /* =========================================================
    main.css
-   Version: v1.1.24 — S1 (3:4), expand chevrons, A2/C1 layout
+   Version: v1.1.25 — 4:5 tiles + title chevron
    ========================================================= */
 
 body {
@@ -66,7 +66,7 @@ button:hover {
 }
 
 /* =========================================================
-   Grid + responsive + override control
+   Grid layout
    ========================================================= */
 
 .grid-results {
@@ -93,7 +93,7 @@ button:hover {
 .force-2-cols { grid-template-columns: repeat(2, 1fr) !important; }
 
 /* =========================================================
-   CARD STYLE
+   Card
    ========================================================= */
 
 .post {
@@ -107,53 +107,42 @@ button:hover {
 }
 
 /* =========================================================
-   TITLE STRIP (Collapsed 1-line)
+   Title strip (1-line)
    ========================================================= */
 
 .post-title {
-    background: #161616;   /* your chosen BG-D */
+    background: #161616;
     font-size: 15px;
     line-height: 1.4;
     color: #e4fcff;
     overflow: hidden;
     white-space: nowrap;
-    text-overflow: clip;
-    max-height: 1.4em;     /* one visible line */
-    opacity: 1;
+    max-height: 1.4em;
     padding-bottom: 4px;
-    transition: max-height .25s ease, opacity .25s ease, white-space .25s;
+    transition: max-height .25s ease, white-space .25s ease;
 }
 
 .post-title.full {
     white-space: normal;
-    max-height: 400px;     /* allow multiline expansion */
-    overflow: visible;
+    max-height: 400px;
 }
 
-/* =========================================================
-   Tiny chevron (12px) inline at end of text
-   ========================================================= */
-
+/* tiny chevron */
 .title-arrow {
     font-size: 12px;
     margin-left: 6px;
     cursor: pointer;
     color: #bff;
-    user-select: none;
-}
-
-.title-arrow:hover {
-    color: #cff;
 }
 
 /* =========================================================
-   3:4 MEDIA TILE — PERFECT MATCH STYLE
+   MEDIA TILE — corrected 4:5
    ========================================================= */
 
 .tile-media {
     position: relative;
     width: 100%;
-    aspect-ratio: 3 / 4;  /* your chosen shape */
+    aspect-ratio: 4 / 5; /* ♥ FINAL RATIO FIX ♥ */
     background: #000;
     border-radius: 10px;
     overflow: hidden;
@@ -164,10 +153,10 @@ button:hover {
 .tile-media iframe {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* crop to fill */
+    object-fit: cover;
 }
 
-/* Text placeholder same shape */
+/* Text placeholder also 4:5 now */
 .placeholder-media {
     width: 100%;
     height: 100%;
@@ -180,7 +169,7 @@ button:hover {
 }
 
 /* =========================================================
-   GALLERY ARROWS
+   Galleries
    ========================================================= */
 
 .gallery-arrow-main {
@@ -192,7 +181,6 @@ button:hover {
     cursor: pointer;
     color: white;
     font-size: 22px;
-    user-select: none;
     border-radius: 6px;
     z-index: 20;
 }
@@ -201,7 +189,7 @@ button:hover {
 .gallery-arrow-main-right { right: 6px; }
 
 /* =========================================================
-   URL TEXT BELOW MEDIA
+   URL under tile
    ========================================================= */
 
 .post-url {
@@ -212,7 +200,7 @@ button:hover {
 }
 
 /* =========================================================
-   FULLSCREEN VIEWER
+   Fullscreen
    ========================================================= */
 
 .fullscreen-media {
@@ -237,10 +225,10 @@ button:hover {
     transform: translateY(-50%);
     padding: 18px;
     background: rgba(255,255,255,0.18);
-    cursor: pointer;
     color: white;
     font-size: 32px;
-    user-select: none;
+    border-radius: 6px;
+    cursor: pointer;
     z-index: 100000;
 }
 
@@ -248,7 +236,7 @@ button:hover {
 .gallery-arrow-right { right: 30px; }
 
 /* =========================================================
-   SCROLL UP + DEBUG BOX
+   Scroll + debug
    ========================================================= */
 
 #scrollTopBtn {
@@ -267,11 +255,10 @@ button:hover {
     position: fixed;
     top: 10px;
     right: 10px;
-    width: 150px;
+    width: 160px;
     padding: 10px;
     background: rgba(0,0,0,0.75);
     border: 1px solid #0ff;
     border-radius: 6px;
     font-size: 12px;
-    z-index: 9999999;
 }
