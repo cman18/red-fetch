@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Red Pull</title>
 
-    <!-- Version bump to kill caching -->
-    <link rel="stylesheet" href="./assets/main.css?v=1.1.20">
+    <!-- Version bump -->
+    <link rel="stylesheet" href="./assets/main.css?v=1.1.21">
 </head>
 
 <body>
@@ -31,12 +31,15 @@
             <label><input type="checkbox" id="vidFilter" checked> Videos</label>
             <label><input type="checkbox" id="otherFilter" checked> Other</label>
 
+            <!-- Column toggle (C-A, L1, BEFORE ZIP) -->
+            <button id="colToggleBtn">Columns: 3</button>
+
             <button id="zipBtn">Download ZIP</button>
         </div>
 
     </div>
 
-    <!-- results container (3-column grid) -->
+    <!-- results container -->
     <div id="results" class="grid-results"></div>
 
     <button id="scrollTopBtn">Top</button>
@@ -44,13 +47,12 @@
     <div class="version">Version 012</div>
 
     <div id="debug-version-box">
-        Index v1.1.20<br>
-        CSS v1.1.20<br>
+        Index v1.1.21<br>
+        CSS v1.1.21<br>
         JS <span id="js-version">loading…</span>
     </div>
 
-    <!-- Version bump to kill caching -->
-    <script defer src="./assets/app.js?v=1.1.20"></script>
+    <script defer src="./assets/app.js?v=1.1.21"></script>
 
 </body>
 </html>
