@@ -1,6 +1,6 @@
 /* =========================================================
    main.css
-   Version: v1.1.22 — S1 (3:4), A2, C1, R1+R2, T1
+   Version: v1.1.24 — S1 (3:4), expand chevrons, A2/C1 layout
    ========================================================= */
 
 body {
@@ -66,7 +66,7 @@ button:hover {
 }
 
 /* =========================================================
-   Grid layout — Responsive base + override
+   Grid + responsive + override control
    ========================================================= */
 
 .grid-results {
@@ -89,17 +89,11 @@ button:hover {
     }
 }
 
-/* override modes from JS */
-.force-3-cols {
-    grid-template-columns: repeat(3, 1fr) !important;
-}
-
-.force-2-cols {
-    grid-template-columns: repeat(2, 1fr) !important;
-}
+.force-3-cols { grid-template-columns: repeat(3, 1fr) !important; }
+.force-2-cols { grid-template-columns: repeat(2, 1fr) !important; }
 
 /* =========================================================
-   CARD (A2)
+   CARD STYLE
    ========================================================= */
 
 .post {
@@ -109,53 +103,84 @@ button:hover {
     padding: 12px 12px 16px 12px;
     display: flex;
     flex-direction: column;
-}
-
-.post-title {
-    font-size: 15px;
-    margin-bottom: 10px;
-    color: #e4fcff;
-    line-height: 1.4;
+    position: relative;
 }
 
 /* =========================================================
-   3:4 MEDIA TILE — S1
+   TITLE STRIP (Collapsed 1-line)
+   ========================================================= */
+
+.post-title {
+    background: #161616;   /* your chosen BG-D */
+    font-size: 15px;
+    line-height: 1.4;
+    color: #e4fcff;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+    max-height: 1.4em;     /* one visible line */
+    opacity: 1;
+    padding-bottom: 4px;
+    transition: max-height .25s ease, opacity .25s ease, white-space .25s;
+}
+
+.post-title.full {
+    white-space: normal;
+    max-height: 400px;     /* allow multiline expansion */
+    overflow: visible;
+}
+
+/* =========================================================
+   Tiny chevron (12px) inline at end of text
+   ========================================================= */
+
+.title-arrow {
+    font-size: 12px;
+    margin-left: 6px;
+    cursor: pointer;
+    color: #bff;
+    user-select: none;
+}
+
+.title-arrow:hover {
+    color: #cff;
+}
+
+/* =========================================================
+   3:4 MEDIA TILE — PERFECT MATCH STYLE
    ========================================================= */
 
 .tile-media {
     position: relative;
     width: 100%;
-    aspect-ratio: 3/4; /* EXACTLY as screenshot */
+    aspect-ratio: 3 / 4;  /* your chosen shape */
     background: #000;
     border-radius: 10px;
     overflow: hidden;
 }
 
-/* ALL media crops neatly */
 .tile-media img,
 .tile-media video,
 .tile-media iframe {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* S1 crop-to-fill */
-    display: block;
+    object-fit: cover; /* crop to fill */
 }
 
-/* Placeholder for text-only posts */
+/* Text placeholder same shape */
 .placeholder-media {
     width: 100%;
     height: 100%;
+    background: #000;
+    color: #7cd;
+    font-size: 26px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 26px;
-    color: #7cd;
-    background: #000;
-    object-fit: cover;
 }
 
 /* =========================================================
-   Gallery arrows
+   GALLERY ARROWS
    ========================================================= */
 
 .gallery-arrow-main {
@@ -176,7 +201,7 @@ button:hover {
 .gallery-arrow-main-right { right: 6px; }
 
 /* =========================================================
-   Post URL
+   URL TEXT BELOW MEDIA
    ========================================================= */
 
 .post-url {
@@ -187,7 +212,7 @@ button:hover {
 }
 
 /* =========================================================
-   Fullscreen (unchanged)
+   FULLSCREEN VIEWER
    ========================================================= */
 
 .fullscreen-media {
@@ -223,7 +248,7 @@ button:hover {
 .gallery-arrow-right { right: 30px; }
 
 /* =========================================================
-   Scroll-to-top
+   SCROLL UP + DEBUG BOX
    ========================================================= */
 
 #scrollTopBtn {
@@ -234,18 +259,10 @@ button:hover {
     color: black;
     padding: 14px 20px;
     border-radius: 50px;
-    font-weight: bold;
     cursor: pointer;
-    border: none;
     z-index: 9999;
-    font-size: 16px;
 }
 
-#scrollTopBtn:hover {
-    filter: brightness(1.1);
-}
-
-/* version box */
 #debug-version-box {
     position: fixed;
     top: 10px;
@@ -255,15 +272,6 @@ button:hover {
     background: rgba(0,0,0,0.75);
     border: 1px solid #0ff;
     border-radius: 6px;
-    color: #fff;
     font-size: 12px;
-    line-height: 1.4;
     z-index: 9999999;
-}
-
-.version {
-    text-align: center;
-    margin-top: 40px;
-    color: #79cccc;
-    opacity: 0.6;
 }
