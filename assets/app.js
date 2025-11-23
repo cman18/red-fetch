@@ -1,15 +1,15 @@
 /* =========================================================
    app.js
-   Version: v1.1.11
+   Version: v1.1.12 — Adds Reddit Gallery Support
    ========================================================= */
 
 window.addEventListener("DOMContentLoaded", () => {
     const box = document.getElementById("js-version");
-    if (box) box.textContent = "v1.1.11";
+    if (box) box.textContent = "v1.1.12";
 });
 
 /* =========================================================
-   REDGIFS DETECTION + SLUG EXTRACTION
+   REDGIFS HELPERS
    ========================================================= */
 
 function isRedgifsURL(url) {
@@ -24,10 +24,8 @@ function isRedgifsURL(url) {
 function extractRedgifsSlug(url) {
     if (!url) return null;
 
-    // unwrap reddit redirect
     if (url.includes("out.reddit.com")) {
-        const u = new URL(url);
-        const dest = u.searchParams.get("url");
+        const dest = new URL(url).searchParams.get("url");
         if (dest) url = dest;
     }
 
@@ -36,18 +34,12 @@ function extractRedgifsSlug(url) {
         /redgifs\.com\/ifr\/([A-Za-z0-9]+)/,
         /\/([A-Za-z0-9]+)$/
     ];
-
     for (let p of patterns) {
         let m = url.match(p);
         if (m) return m[1];
     }
-
     return null;
 }
-
-/* =========================================================
-   REDGIFS VIDEO EXTRACTOR (DEBUG IFR METHOD)
-   ========================================================= */
 
 async function fetchRedgifsMP4(url) {
     const slug = extractRedgifsSlug(url);
@@ -66,19 +58,17 @@ async function fetchRedgifsMP4(url) {
         document.body.appendChild(iframe);
 
         let tries = 0;
-        const maxTries = 50;
-
         const iv = setInterval(() => {
             try {
                 const vid = iframe.contentDocument?.querySelector("video");
-                if (vid && vid.src?.startsWith("https")) {
+                if (vid && vid.src.startsWith("https")) {
                     clearInterval(iv);
                     resolve(vid.src);
                 }
-            } catch (err) { }
+            } catch (e) {}
 
             tries++;
-            if (tries >= maxTries) {
+            if (tries > 50) {
                 clearInterval(iv);
                 resolve(null);
             }
@@ -104,7 +94,6 @@ function extractUsername(text) {
     if (m) return m[1];
 
     if (/^[A-Za-z0-9_-]{2,30}$/.test(text)) return text;
-
     return null;
 }
 
@@ -124,7 +113,7 @@ function isGif(url) {
 
 function convertGifToMP4(url) {
     if (url.includes("i.redd.it") && url.endsWith(".gif")) return url;
-    if (url.includes("imgur.com") && url.endsWith(".gifv")) return url.replace(".gifv", ".mp4");
+    if (url.endsWith(".gifv")) return url.replace(".gifv", ".mp4");
     if (url.endsWith(".gif")) return url.replace(".gif", ".mp4");
     return url;
 }
@@ -159,7 +148,6 @@ async function loadPosts() {
 
     const raw = input.value.trim();
     const username = extractUsername(raw);
-
     if (!username) {
         results.innerHTML = "<div class='post'>Invalid username or URL.</div>";
         return;
@@ -184,60 +172,70 @@ async function loadPosts() {
         }
 
     } catch (err) {
-        results.innerHTML = `<div class="post">Error loading posts: ${err.message}</div>`;
+        results.innerHTML =
+            `<div class='post'>Error loading posts: ${err.message}</div>`;
     }
 }
 
 /* =========================================================
-   RENDER POST
+   RENDER POST + GALLERY SUPPORT
    ========================================================= */
 
 async function renderPost(post) {
-    let div = document.createElement("div");
+    const div = document.createElement("div");
     div.className = "post";
 
-    let title = document.createElement("div");
+    const title = document.createElement("div");
     title.textContent = post.title;
     title.style.marginBottom = "12px";
     div.appendChild(title);
 
-    let mediaBox = document.createElement("div");
+    const mediaBox = document.createElement("div");
     mediaBox.className = "tile-media";
 
-    let url = post.url || "";
-    let id = post.id;
+    const url = post.url || "";
 
-    postMediaIndex[id] = postMediaList.length;
+    /* ---------- 1. Reddit Gallery (NEW) ---------- */
+    if (post.is_gallery && post.gallery_data && post.media_metadata) {
+        const galleryItems =
+            post.gallery_data.items.map(x => x.media_id).filter(Boolean);
 
-    /* ---------- HARD IMAGE FALLBACK (jpg/png/webp) ---------- */
+        const images = galleryItems.map(id => {
+            const item = post.media_metadata[id];
+            if (!item) return null;
+            let src = item.s?.u || item.s?.gif || item.s?.mp4;
+            if (!src) return null;
+            return src.replace(/&amp;/g, "&");
+        }).filter(Boolean);
 
+        if (images.length) {
+            renderGallery(mediaBox, div, images, post);
+            results.appendChild(div);
+            return;
+        }
+    }
+
+    /* ---------- 2. Direct Images (.jpg/.png/.webp) ---------- */
     if (imgFilter.checked && url.match(/\.(jpg|jpeg|png|webp)$/i)) {
         appendMedia(mediaBox, div, url, "image", post);
         results.appendChild(div);
         return;
     }
 
-    /* ---------- REDGIFS ---------- */
-
+    /* ---------- 3. RedGifs ---------- */
     if (imgFilter.checked && isRedgifsURL(url)) {
         const mp4 = await fetchRedgifsMP4(url);
-
         if (mp4) {
             appendMedia(mediaBox, div, mp4, "gif", post);
             results.appendChild(div);
             return;
         }
-
-        let err = document.createElement("div");
-        err.textContent = "Could not load RedGifs";
-        err.style.color = "#faa";
-        div.appendChild(err);
+        div.appendChild(errBox("Could not load RedGifs"));
         results.appendChild(div);
         return;
     }
 
-    /* ---------- YOUTUBE ---------- */
-
+    /* ---------- 4. YouTube ---------- */
     if (otherFilter.checked &&
         (url.includes("youtube.com") || url.includes("youtu.be"))) {
 
@@ -254,7 +252,7 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- VIMEO ---------- */
+    /* ---------- 5. Vimeo ---------- */
     if (otherFilter.checked && url.includes("vimeo.com")) {
         let m = url.match(/vimeo\.com\/(\d+)/);
         if (m) {
@@ -264,7 +262,7 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- TWITCH CLIPS ---------- */
+    /* ---------- 6. Twitch ---------- */
     if (otherFilter.checked && url.includes("twitch.tv")) {
         let m = url.match(/clip\/([^/?]+)/);
         if (m) {
@@ -275,16 +273,16 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- PORNHUB ---------- */
+    /* ---------- 7. Pornhub ---------- */
     if (otherFilter.checked &&
         (url.includes("pornhub.com") || url.includes("phncdn.com"))) {
-        let embed = url.replace("view_video.php?viewkey=", "embed/");
-        appendIframe(mediaBox, div, embed);
+        appendIframe(mediaBox, div,
+            url.replace("view_video.php?viewkey=", "embed/"));
         results.appendChild(div);
         return;
     }
 
-    /* ---------- REDTUBE ---------- */
+    /* ---------- 8. Redtube ---------- */
     if (otherFilter.checked && url.includes("redtube.com")) {
         let m = url.match(/redtube\.com\/(\d+)/);
         if (m) {
@@ -295,7 +293,7 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- TWITTER/X ---------- */
+    /* ---------- 9. Twitter/X ---------- */
     if (otherFilter.checked && url.includes("twitter.com")) {
         appendIframe(mediaBox, div,
             url.replace("twitter.com", "twitframe.com"));
@@ -303,22 +301,21 @@ async function renderPost(post) {
         return;
     }
 
-    /* ---------- GIF ---------- */
+    /* ---------- 10. GIF ---------- */
     if (imgFilter.checked && isGif(url)) {
-        const finalURL = convertGifToMP4(url);
-        appendMedia(mediaBox, div, finalURL, "gif", post);
+        appendMedia(mediaBox, div, convertGifToMP4(url), "gif", post);
         results.appendChild(div);
         return;
     }
 
-    /* ---------- REDDIT IMAGE VIA post_hint ---------- */
+    /* ---------- 11. post_hint image ---------- */
     if (imgFilter.checked && post.post_hint === "image") {
         appendMedia(mediaBox, div, url, "image", post);
         results.appendChild(div);
         return;
     }
 
-    /* ---------- REDDIT VIDEO ---------- */
+    /* ---------- 12. Reddit video ---------- */
     if (
         vidFilter.checked &&
         post.is_video &&
@@ -329,7 +326,7 @@ async function renderPost(post) {
         return;
     }
 
-    /* ---------- FALLBACK ---------- */
+    /* ---------- 13. Fallback ---------- */
     if (otherFilter.checked) {
         let a = document.createElement("a");
         a.href = url;
@@ -341,7 +338,54 @@ async function renderPost(post) {
 }
 
 /* =========================================================
-   APPEND MEDIA
+   GALLERY RENDER + ARROWS
+   ========================================================= */
+
+function renderGallery(mediaBox, container, images, post) {
+    let index = 0;
+
+    const img = document.createElement("img");
+    img.src = images[0];
+
+    const left = document.createElement("div");
+    left.className = "gallery-arrow-main gallery-arrow-main-left";
+    left.textContent = "<";
+
+    const right = document.createElement("div");
+    right.className = "gallery-arrow-main gallery-arrow-main-right";
+    right.textContent = ">";
+
+    const update = () => {
+        img.src = images[index];
+    };
+
+    left.onclick = (ev) => {
+        ev.stopPropagation();
+        index = (index - 1 + images.length) % images.length;
+        update();
+    };
+
+    right.onclick = (ev) => {
+        ev.stopPropagation();
+        index = (index + 1) % images.length;
+        update();
+    };
+
+    mediaBox.appendChild(img);
+    mediaBox.appendChild(left);
+    mediaBox.appendChild(right);
+
+    // Add URL under tile
+    let urlLine = document.createElement("div");
+    urlLine.className = "post-url";
+    urlLine.textContent = post.url;
+
+    container.appendChild(mediaBox);
+    container.appendChild(urlLine);
+}
+
+/* =========================================================
+   IFRAME + MEDIA HELPERS
    ========================================================= */
 
 function appendMedia(mediaBox, container, src, type, post) {
@@ -378,14 +422,11 @@ function appendMedia(mediaBox, container, src, type, post) {
     });
 }
 
-/* =========================================================
-   APPEND IFRAME
-   ========================================================= */
-
 function appendIframe(mediaBox, container, src) {
     const iframe = document.createElement("iframe");
     iframe.src = src;
     iframe.allow = "autoplay; encrypted-media";
+
     mediaBox.appendChild(iframe);
     container.appendChild(mediaBox);
 }
@@ -412,4 +453,4 @@ copyBtn.onclick = () =>
 zipBtn.onclick = () =>
     alert("ZIP downloads coming soon");
 
-/* END app.js v1.1.11 */
+/* END app.js v1.1.12 */
