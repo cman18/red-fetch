@@ -1,6 +1,5 @@
 /* =========================================================
-   main.css
-   Version: v1.1.33 — Uniform 4:5 tiles + cleanup
+   main.css — v1.1.34
    ========================================================= */
 
 body {
@@ -11,6 +10,20 @@ body {
     padding: 20px;
 }
 
+/* Version box */
+#debug-version-box {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 160px;
+    padding: 10px;
+    background: rgba(0,0,0,0.75);
+    border: 1px solid #0ff;
+    border-radius: 6px;
+    font-size: 12px;
+    z-index: 9999;
+}
+
 .title {
     text-align: left;
     font-size: 32px;
@@ -18,7 +31,7 @@ body {
     color: #b8ffff;
 }
 
-/* Container */
+/* Box container */
 #container {
     max-width: 1000px;
     margin: 0 auto;
@@ -62,12 +75,7 @@ button {
     font-weight: bold;
 }
 
-button:hover { filter: brightness(1.1); }
-
-/* =========================================================
-   GRID
-   ========================================================= */
-
+/* Grid */
 .grid-results {
     max-width: 1300px;
     margin: 40px auto;
@@ -76,61 +84,57 @@ button:hover { filter: brightness(1.1); }
     gap: 22px;
 }
 
-@media (max-width: 1120px) {
-    .grid-results { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 620px) {
-    .grid-results { grid-template-columns: repeat(1, 1fr); }
-}
-
 .force-3-cols { grid-template-columns: repeat(3, 1fr) !important; }
 .force-2-cols { grid-template-columns: repeat(2, 1fr) !important; }
 
 /* =========================================================
-   POST TILE — Uniform 4:5 height always
+   TILE LOCKING
    ========================================================= */
 
 .post {
     background: #161616;
     border-radius: 12px;
     border: 1px solid #222;
-    padding: 12px;
+    padding: 12px 12px 16px 12px;
+    position: relative;
     display: flex;
     flex-direction: column;
+    height: 670px; 
+    overflow: hidden;
 }
 
-/* Title strip */
+/* TITLE (lock to one line) */
 .post-title {
     background: #161616;
     font-size: 15px;
+    line-height: 1.4;
+    color: #e4fcff;
     white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
     max-height: 1.4em;
     padding-bottom: 4px;
-    color: #e4fcff;
 }
 
-.post-title.full {
-    white-space: normal;
-    max-height: 400px;
+/* CLICKABLE URL line (lock one line) */
+.post-url a {
+    color: #88ddee;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
 }
 
-.title-arrow {
-    font-size: 12px;
-    margin-left: 6px;
-    cursor: pointer;
-    color: #bff;
-}
-
-/* MEDIA TILE — ALWAYS 4:5 */
+/* MEDIA BOX fixed 4:5 */
 .tile-media {
+    position: relative;
     width: 100%;
     aspect-ratio: 4 / 5;
     background: #000;
     border-radius: 10px;
     overflow: hidden;
-    position: relative;
+    flex: 0 0 auto;
 }
 
 .tile-media img,
@@ -141,19 +145,18 @@ button:hover { filter: brightness(1.1); }
     object-fit: cover;
 }
 
-/* Placeholder */
 .placeholder-media {
     width: 100%;
     height: 100%;
     background: #000;
+    color: #7cd;
     font-size: 26px;
     display: flex;
     justify-content: center;
     align-items: center;
-    color: #7cd;
 }
 
-/* Gallery arrows */
+/* Gallery Arrows */
 .gallery-arrow-main {
     position: absolute;
     top: 50%;
@@ -164,18 +167,11 @@ button:hover { filter: brightness(1.1); }
     color: white;
     font-size: 22px;
     border-radius: 6px;
-    z-index: 20;
+    user-select: none;
 }
+
 .gallery-arrow-main-left { left: 6px; }
 .gallery-arrow-main-right { right: 6px; }
-
-/* Url */
-.post-url {
-    margin-top: 10px;
-    font-size: 13px;
-    color: #88ddee;
-    word-break: break-all;
-}
 
 /* Fullscreen */
 .fullscreen-media {
@@ -188,12 +184,6 @@ button:hover { filter: brightness(1.1); }
     z-index: 99999;
 }
 
-.fullscreen-media img,
-.fullscreen-media video {
-    max-width: 95%;
-    max-height: 95%;
-}
-
 .gallery-arrow {
     position: absolute;
     top: 50%;
@@ -204,12 +194,12 @@ button:hover { filter: brightness(1.1); }
     font-size: 32px;
     border-radius: 6px;
     cursor: pointer;
-    z-index: 100000;
 }
+
 .gallery-arrow-left { left: 30px; }
 .gallery-arrow-right { right: 30px; }
 
-/* Top button */
+/* Scroll Top */
 #scrollTopBtn {
     position: fixed;
     bottom: 25px;
