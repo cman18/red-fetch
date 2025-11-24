@@ -1,6 +1,6 @@
 /* =========================================================
    main.css
-   Version: v1.1.27 — 4:5 tiles + title strip + fixed videos
+   Version: v1.1.29 — matches app.js v1.1.29
    ========================================================= */
 
 body {
@@ -107,7 +107,7 @@ button:hover {
 }
 
 /* =========================================================
-   Title strip (1-line) + tiny chevron
+   Title strip (1 line + expand arrow)
    ========================================================= */
 
 .post-title {
@@ -135,7 +135,7 @@ button:hover {
 }
 
 /* =========================================================
-   Media Tile — 4:5 ratio
+   4:5 MEDIA TILE (critical)
    ========================================================= */
 
 .tile-media {
@@ -145,24 +145,24 @@ button:hover {
     background: #000;
     border-radius: 10px;
     overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* Images, iframes already correct */
+/* All media inside tile — fill properly */
 .tile-media img,
+.tile-media video,
 .tile-media iframe {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-/* NEW: reinforce scaling for videos specifically */
-.tile-media video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+/* =========================================================
+   Placeholder
+   ========================================================= */
 
-/* Text placeholder now 4:5 also */
 .placeholder-media {
     width: 100%;
     height: 100%;
@@ -175,7 +175,7 @@ button:hover {
 }
 
 /* =========================================================
-   Gallery arrows
+   Gallery Arrows
    ========================================================= */
 
 .gallery-arrow-main {
@@ -189,6 +189,7 @@ button:hover {
     font-size: 22px;
     border-radius: 6px;
     z-index: 20;
+    user-select: none;
 }
 
 .gallery-arrow-main-left { left: 6px; }
