@@ -21,6 +21,11 @@ let loadingMore = false;
 let currentUser = null;
 
 /* ---------------------------------------------------------
+   MUST HAVE (missing earlier)
+--------------------------------------------------------- */
+let postMediaList = [];
+
+/* ---------------------------------------------------------
    Column toggle
 --------------------------------------------------------- */
 const resultsGrid = document.getElementById("results");
@@ -558,12 +563,21 @@ window.addEventListener("scroll", async () => {
 });
 
 /* ---------------------------------------------------------
-   Main load button
+   Load button
 --------------------------------------------------------- */
+
+const results = document.getElementById("results");
+const input = document.getElementById("input");
+const loadBtn = document.getElementById("loadBtn");
+const clearBtn = document.getElementById("clearBtn");
+const copyBtn = document.getElementById("copyBtn");
+const zipBtn = document.getElementById("zipBtn");
+const scrollTopBtn = document.getElementById("scrollTopBtn");
 
 loadBtn.onclick = async () => {
     results.innerHTML = "";
     seenPostURLs.clear();
+    postMediaList = [];
     afterToken = null;
     loadingMore = false;
 
@@ -597,13 +611,14 @@ loadBtn.onclick = async () => {
 };
 
 /* ---------------------------------------------------------
-   Misc Buttons
+   Misc buttons
 --------------------------------------------------------- */
 
 clearBtn.onclick = () => {
     input.value = "";
     results.innerHTML = "";
     seenPostURLs.clear();
+    postMediaList = [];
     currentUser = null;
     afterToken = null;
     forcedMode = null;
