@@ -1,15 +1,12 @@
 /* =========================================================
    app.js
-   Version: v1.1.27 — Redgifs Token Fix + Gallery Fix + 4:5 Tiles
+   Version: v1.1.28 — Broken Gallery Fix C + Redgifs Token
    ========================================================= */
 
 window.addEventListener("DOMContentLoaded", async () => {
     const box = document.getElementById("js-version");
-    if (box) box.textContent = "v1.1.27";
+    if (box) box.textContent = "v1.1.28";
 
-    /* ---------------------------------------------------------
-       REDGIFS: Fetch anonymous token BEFORE loading anything
-       --------------------------------------------------------- */
     try {
         const authRes = await fetch("https://api.redgifs.com/v2/auth/temporary", {
             method: "POST"
@@ -17,16 +14,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         const authJson = await authRes.json();
         window.redgifsAuth = authJson.token;
-
-        console.log("Redgifs token obtained.");
     } catch (e) {
-        console.error("Failed to fetch Redgifs token.", e);
         window.redgifsAuth = null;
     }
 });
 
 /* =========================================================
-   COLUMN TOGGLE (R2 + O1)
+   COLUMN TOGGLE
    ========================================================= */
 
 const resultsGrid = document.getElementById("results");
@@ -53,7 +47,7 @@ colToggleBtn.onclick = () => {
 };
 
 /* =========================================================
-   REDGIFS — FULL FIX: token auth, reliable URL extraction
+   REDGIFS FIX
    ========================================================= */
 
 function isRedgifsURL(url) {
@@ -81,15 +75,12 @@ function extractRedgifsSlug(url) {
         const m = url.match(p);
         if (m) return m[1];
     }
-
     return null;
 }
 
 async function fetchRedgifsMP4(url) {
     const slug = extractRedgifsSlug(url);
-    if (!slug) return null;
-
-    if (!window.redgifsAuth) return null;
+    if (!slug || !window.redgifsAuth) return null;
 
     try {
         const apiURL = `https://api.redgifs.com/v2/gifs/${slug}`;
@@ -109,8 +100,7 @@ async function fetchRedgifsMP4(url) {
 
         return hd || sd || null;
 
-    } catch (err) {
-        console.error("Redgifs fetch error:", err);
+    } catch {
         return null;
     }
 }
@@ -213,7 +203,7 @@ async function loadPosts() {
 }
 
 /* =========================================================
-   TITLE (1-line collapse + tiny ⌄ chevron)
+   TITLE STRIP
    ========================================================= */
 
 function setupTitleBehavior(titleDiv) {
@@ -253,7 +243,7 @@ function setupTitleBehavior(titleDiv) {
 }
 
 /* =========================================================
-   RENDER POST — FIXED GALLERY + REDGIFS + 4:5
+   RENDER POST — GALLERY FIX C
    ========================================================= */
 
 async function renderPost(post) {
@@ -270,11 +260,13 @@ async function renderPost(post) {
 
     const url = post.url || "";
 
-    /* ---------- REDDIT GALLERY — FIXED ---------- */
+    /* ---------------------------------------------------------
+       FIXED GALLERY HANDLING
+       --------------------------------------------------------- */
     if (post.is_gallery && post.media_metadata && post.gallery_data) {
         const ids = post.gallery_data.items.map(x => x.media_id);
 
-        const imgs = ids.map(id => {
+        let imgs = ids.map(id => {
             const meta = post.media_metadata[id];
             if (!meta) return null;
 
@@ -284,22 +276,33 @@ async function renderPost(post) {
                 source = meta.p[meta.p.length - 1].u;
             }
 
-            return source ? source.replace(/&amp;/g, "&") : null;
-        }).filter(Boolean);
+            if (source) return source.replace(/&amp;/g, "&");
+
+            /* Attempt aggressive fallback */
+            return tryAggressiveGalleryRecovery(id);
+        });
+
+        imgs = imgs.filter(Boolean);
 
         if (imgs.length) {
             renderGallery(mediaBox, div, imgs, post, titleDiv);
             return;
         }
+
+        /* No images at all: show broken gallery message */
+        renderBrokenGallery(mediaBox, div, post, titleDiv);
+        return;
     }
 
-    /* ---------- DIRECT IMAGE ---------- */
+    /* ---------------------------------------------------------
+       NORMAL MEDIA
+       --------------------------------------------------------- */
+
     if (imgFilter.checked && url.match(/\.(jpg|jpeg|png|webp)$/i)) {
         appendMedia(mediaBox, div, url, "image", post, titleDiv);
         return;
     }
 
-    /* ---------- REDGIFS (FIXED) ---------- */
     if (imgFilter.checked && isRedgifsURL(url)) {
         const mp4 = await fetchRedgifsMP4(url);
         if (mp4) {
@@ -308,63 +311,50 @@ async function renderPost(post) {
         }
     }
 
-    /* ---------- YOUTUBE ---------- */
     if (otherFilter.checked &&
         (url.includes("youtube.com") || url.includes("youtu.be"))) {
 
         let id = null;
-        let m1 = url.match(/v=([^&]+)/);
+        const m1 = url.match(/v=([^&]+)/);
         if (m1) id = m1[1];
 
-        let m2 = url.match(/youtu\.be\/([^?]+)/);
+        const m2 = url.match(/youtu\.be\/([^?]+)/);
         if (!id && m2) id = m2[1];
 
         if (id) {
             appendIframe(mediaBox, div,
-                `https://www.youtube.com/embed/${id}`,
-                titleDiv
-            );
+                `https://www.youtube.com/embed/${id}`, titleDiv);
             return;
         }
     }
 
-    /* ---------- GIF ---------- */
     if (imgFilter.checked && isGif(url)) {
-        appendMedia(
-            mediaBox,
-            div,
-            convertGifToMP4(url),
-            "gif",
-            post,
-            titleDiv
-        );
+        appendMedia(mediaBox, div, convertGifToMP4(url), "gif", post, titleDiv);
         return;
     }
 
-    /* ---------- post_hint: image ---------- */
     if (imgFilter.checked && post.post_hint === "image") {
         appendMedia(mediaBox, div, url, "image", post, titleDiv);
         return;
     }
 
-    /* ---------- REDDIT VIDEO ---------- */
     if (
         vidFilter.checked &&
         post.is_video &&
         post.media?.reddit_video?.fallback_url
     ) {
         appendMedia(
-            mediaBox,
-            div,
+            mediaBox, div,
             post.media.reddit_video.fallback_url,
-            "video",
-            post,
-            titleDiv
+            "video", post, titleDiv
         );
         return;
     }
 
-    /* ---------- TEXT POST ---------- */
+    /* ---------------------------------------------------------
+       TEXT POST FALLBACK
+       --------------------------------------------------------- */
+
     const placeholder = document.createElement("div");
     placeholder.className = "placeholder-media";
     placeholder.textContent = "Text Post";
@@ -379,6 +369,44 @@ async function renderPost(post) {
 
     setupTitleBehavior(titleDiv);
     results.appendChild(div);
+}
+
+/* =========================================================
+   AGGRESSIVE GALLERY RECOVERY
+   ========================================================= */
+
+function tryAggressiveGalleryRecovery(id) {
+    if (!id) return null;
+
+    const attempts = [
+        `https://i.redd.it/${id}.jpg`,
+        `https://i.redd.it/${id}.png`,
+        `https://preview.redd.it/${id}.jpg`,
+        `https://preview.redd.it/${id}.png`
+    ];
+
+    return attempts[0];
+}
+
+/* =========================================================
+   BROKEN GALLERY UI
+   ========================================================= */
+
+function renderBrokenGallery(mediaBox, container, post, titleDiv) {
+    const box = document.createElement("div");
+    box.className = "placeholder-media";
+    box.textContent = "Gallery unavailable (Reddit returned broken data)";
+    mediaBox.appendChild(box);
+
+    const urlLine = document.createElement("div");
+    urlLine.className = "post-url";
+    urlLine.textContent = post.url;
+
+    container.appendChild(mediaBox);
+    container.appendChild(urlLine);
+
+    setupTitleBehavior(titleDiv);
+    results.appendChild(container);
 }
 
 /* =========================================================
@@ -426,7 +454,6 @@ function renderGallery(mediaBox, container, images, post, titleDiv) {
     container.appendChild(urlLine);
 
     setupTitleBehavior(titleDiv);
-
     results.appendChild(container);
 }
 
@@ -554,7 +581,7 @@ function appendIframe(mediaBox, container, src, titleDiv) {
 }
 
 /* =========================================================
-   BUTTON HANDLERS
+   BUTTONS
    ========================================================= */
 
 scrollTopBtn.onclick = () =>
@@ -577,4 +604,4 @@ copyBtn.onclick = () =>
 zipBtn.onclick = () =>
     alert("ZIP downloads coming soon");
 
-/* END app.js v1.1.27 */
+/* END app.js v1.1.28 */
