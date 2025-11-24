@@ -1,24 +1,24 @@
 /* =========================================================
    app.js
-   Version: v1.1.29 — Deduping + Gallery Fix C + Redgifs Token
+   Version: v1.1.30 — Clean Broken-Gallery Collapse + Fixes
+   ========================================================= */
+
+/* =========================================================
+   VERSION INIT + REDGIFS TOKEN
    ========================================================= */
 
 window.addEventListener("DOMContentLoaded", async () => {
     const box = document.getElementById("js-version");
-    if (box) box.textContent = "v1.1.29";
+    if (box) box.textContent = "v1.1.30";
 
-    /* ---------------------------------------------------------
-       REDGIFS TOKEN (fetch before anything else)
-       --------------------------------------------------------- */
     try {
-        const authRes = await fetch("https://api.redgifs.com/v2/auth/temporary", {
+        const res = await fetch("https://api.redgifs.com/v2/auth/temporary", {
             method: "POST"
         });
-
-        const authJson = await authRes.json();
-        window.redgifsAuth = authJson.token;
-    } catch (e) {
-        console.error("Failed to fetch Redgifs token.", e);
+        const json = await res.json();
+        window.redgifsAuth = json.token;
+    } catch (err) {
+        console.error("Redgifs auth error:", err);
         window.redgifsAuth = null;
     }
 });
@@ -46,17 +46,16 @@ function applyColumnMode() {
 }
 
 colToggleBtn.onclick = () => {
-    forcedMode = (forcedMode === "3" || forcedMode === null) ? "2" : "3";
+    forcedMode = (!forcedMode || forcedMode === "3") ? "2" : "3";
     applyColumnMode();
 };
 
 /* =========================================================
-   REDGIFS FIX
+   REDGIFS HELPERS
    ========================================================= */
 
 function isRedgifsURL(url) {
-    if (!url) return false;
-    return url.includes("redgifs.com");
+    return url && url.includes("redgifs.com");
 }
 
 function extractRedgifsSlug(url) {
@@ -75,7 +74,7 @@ function extractRedgifsSlug(url) {
         /redgifs\.com\/([A-Za-z0-9]+)$/
     ];
 
-    for (let p of patterns) {
+    for (const p of patterns) {
         const m = url.match(p);
         if (m) return m[1];
     }
@@ -88,7 +87,6 @@ async function fetchRedgifsMP4(url) {
 
     try {
         const apiURL = `https://api.redgifs.com/v2/gifs/${slug}`;
-
         const res = await fetch(apiURL, {
             headers: {
                 Authorization: `Bearer ${window.redgifsAuth}`
@@ -98,11 +96,7 @@ async function fetchRedgifsMP4(url) {
         if (!res.ok) return null;
 
         const json = await res.json();
-
-        const hd = json?.gif?.urls?.hd;
-        const sd = json?.gif?.urls?.sd;
-
-        return hd || sd || null;
+        return json?.gif?.urls?.hd || json?.gif?.urls?.sd || null;
 
     } catch {
         return null;
@@ -132,16 +126,16 @@ function extractUsername(text) {
 }
 
 /* =========================================================
-   MEDIA HELPERS
+   BASIC HELPERS
    ========================================================= */
 
 function isGif(url) {
-    if (!url) return false;
     return (
-        url.endsWith(".gif") ||
-        url.endsWith(".gifv") ||
-        url.includes("gfycat") ||
-        (url.includes("imgur.com") && url.includes("gif"))
+        url &&
+        (url.endsWith(".gif") ||
+         url.endsWith(".gifv") ||
+         url.includes("gfycat") ||
+         (url.includes("imgur.com") && url.includes("gif")))
     );
 }
 
@@ -167,12 +161,11 @@ const vidFilter = document.getElementById("vidFilter");
 const otherFilter = document.getElementById("otherFilter");
 
 let postMediaList = [];
+const seenPostURLs = new Set();
 
 /* =========================================================
    LOAD POSTS
    ========================================================= */
-
-const seenPostURLs = new Set();  /** dedupe */
 
 async function loadPosts() {
     results.innerHTML = "";
@@ -209,19 +202,23 @@ async function loadPosts() {
     }
 }
 
+loadBtn.onclick = loadPosts;
+
 /* =========================================================
    DEDUPE
    ========================================================= */
 
 function shouldSkipPost(post) {
     if (!post?.url) return false;
+
     if (seenPostURLs.has(post.url)) return true;
+
     seenPostURLs.add(post.url);
     return false;
 }
 
 /* =========================================================
-   TITLE STRIP
+   TITLE STRIP EXPAND/COLLAPSE
    ========================================================= */
 
 function setupTitleBehavior(titleDiv) {
@@ -240,28 +237,56 @@ function setupTitleBehavior(titleDiv) {
     measure.remove();
 
     const containerWidth = titleDiv.clientWidth;
-
     if (fullWidth <= containerWidth) return;
 
     const arrow = document.createElement("span");
     arrow.className = "title-arrow";
     arrow.textContent = "⌄";
-
     titleDiv.appendChild(arrow);
 
     arrow.onclick = (e) => {
         e.stopPropagation();
         const expanded = titleDiv.classList.toggle("full");
-
         arrow.textContent = expanded ? "⌃" : "⌄";
-
         titleDiv.style.whiteSpace = expanded ? "normal" : "nowrap";
         titleDiv.style.maxHeight = expanded ? "400px" : "1.4em";
     };
 }
 
 /* =========================================================
-   RENDER POST — GALLERY FIX + DEDUPE
+   BROKEN GALLERY → CLEAN TEXT POST
+   ========================================================= */
+
+function renderCollapsedBrokenGallery(post) {
+    const div = document.createElement("div");
+    div.className = "post";
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "post-title";
+    titleDiv.textContent = post.title || "";
+    div.appendChild(titleDiv);
+
+    const mediaBox = document.createElement("div");
+    mediaBox.className = "tile-media";
+
+    const placeholder = document.createElement("div");
+    placeholder.className = "placeholder-media";
+    placeholder.textContent = "Text Post";
+    mediaBox.appendChild(placeholder);
+
+    const urlLine = document.createElement("div");
+    urlLine.className = "post-url";
+    urlLine.textContent = post.url;
+
+    div.appendChild(mediaBox);
+    div.appendChild(urlLine);
+
+    setupTitleBehavior(titleDiv);
+    results.appendChild(div);
+}
+
+/* =========================================================
+   MAIN RENDER POST
    ========================================================= */
 
 async function renderPost(post) {
@@ -280,9 +305,9 @@ async function renderPost(post) {
 
     const url = post.url || "";
 
-    /* ---------------------------------------------------------
-       GALLERY HANDLING — FIX C
-       --------------------------------------------------------- */
+    /* =====================================================
+       GALLERY HANDLING
+       ===================================================== */
 
     if (post.is_gallery && post.media_metadata && post.gallery_data) {
         const ids = post.gallery_data.items.map(x => x.media_id);
@@ -302,23 +327,28 @@ async function renderPost(post) {
             return tryAggressiveGalleryRecovery(id);
         }).filter(Boolean);
 
-        if (imgs.length) {
-            renderGallery(mediaBox, div, imgs, post, titleDiv);
+        if (!imgs.length) {
+            // Instead of black box → collapse to clean Text Post
+            renderCollapsedBrokenGallery(post);
             return;
         }
 
-        renderBrokenGallery(mediaBox, div, post, titleDiv);
+        renderGallery(mediaBox, div, imgs, post, titleDiv);
         return;
     }
 
-    /* ---------------------------------------------------------
-       NORMAL MEDIA
-       --------------------------------------------------------- */
+    /* =====================================================
+       NORMAL IMAGE
+       ===================================================== */
 
     if (imgFilter.checked && url.match(/\.(jpg|jpeg|png|webp)$/i)) {
         appendMedia(mediaBox, div, url, "image", post, titleDiv);
         return;
     }
+
+    /* =====================================================
+       REDGIFS
+       ===================================================== */
 
     if (imgFilter.checked && isRedgifsURL(url)) {
         const mp4 = await fetchRedgifsMP4(url);
@@ -328,10 +358,15 @@ async function renderPost(post) {
         }
     }
 
+    /* =====================================================
+       YOUTUBE
+       ===================================================== */
+
     if (otherFilter.checked &&
         (url.includes("youtube.com") || url.includes("youtu.be"))) {
 
         let id = null;
+
         const m1 = url.match(/v=([^&]+)/);
         if (m1) id = m1[1];
 
@@ -339,9 +374,7 @@ async function renderPost(post) {
         if (!id && m2) id = m2[1];
 
         if (id) {
-            appendIframe(
-                mediaBox,
-                div,
+            appendIframe(mediaBox, div,
                 `https://www.youtube.com/embed/${id}`,
                 titleDiv
             );
@@ -349,36 +382,48 @@ async function renderPost(post) {
         }
     }
 
+    /* =====================================================
+       GIF → MP4
+       ===================================================== */
+
     if (imgFilter.checked && isGif(url)) {
-        appendMedia(
-            mediaBox, div,
+        appendMedia(mediaBox, div,
             convertGifToMP4(url),
-            "gif", post, titleDiv
+            "gif",
+            post, titleDiv
         );
         return;
     }
+
+    /* =====================================================
+       REDDIT VIDEO
+       ===================================================== */
+
+    if (vidFilter.checked &&
+        post.is_video &&
+        post.media?.reddit_video?.fallback_url) {
+
+        appendMedia(
+            mediaBox, div,
+            post.media.reddit_video.fallback_url,
+            "video",
+            post, titleDiv
+        );
+        return;
+    }
+
+    /* =====================================================
+       POST_HINT IMAGE
+       ===================================================== */
 
     if (imgFilter.checked && post.post_hint === "image") {
         appendMedia(mediaBox, div, url, "image", post, titleDiv);
         return;
     }
 
-    if (
-        vidFilter.checked &&
-        post.is_video &&
-        post.media?.reddit_video?.fallback_url
-    ) {
-        appendMedia(
-            mediaBox, div,
-            post.media.reddit_video.fallback_url,
-            "video", post, titleDiv
-        );
-        return;
-    }
-
-    /* ---------------------------------------------------------
-       TEXT POST FALLBACK
-       --------------------------------------------------------- */
+    /* =====================================================
+       TEXT POST (final fallback)
+       ===================================================== */
 
     const placeholder = document.createElement("div");
     placeholder.className = "placeholder-media";
@@ -414,28 +459,7 @@ function tryAggressiveGalleryRecovery(id) {
 }
 
 /* =========================================================
-   BROKEN GALLERY UI
-   ========================================================= */
-
-function renderBrokenGallery(mediaBox, container, post, titleDiv) {
-    const box = document.createElement("div");
-    box.className = "placeholder-media";
-    box.textContent = "Gallery unavailable (Reddit returned broken data)";
-    mediaBox.appendChild(box);
-
-    const urlLine = document.createElement("div");
-    urlLine.className = "post-url";
-    urlLine.textContent = post.url;
-
-    container.appendChild(mediaBox);
-    container.appendChild(urlLine);
-
-    setupTitleBehavior(titleDiv);
-    results.appendChild(container);
-}
-
-/* =========================================================
-   GALLERY
+   GALLERY RENDER
    ========================================================= */
 
 function renderGallery(mediaBox, container, images, post, titleDiv) {
@@ -479,7 +503,6 @@ function renderGallery(mediaBox, container, images, post, titleDiv) {
     container.appendChild(urlLine);
 
     setupTitleBehavior(titleDiv);
-
     results.appendChild(container);
 }
 
@@ -521,7 +544,8 @@ function openFullscreenGallery(images, startIndex) {
     right.onclick = e => {
         e.stopPropagation();
         fullscreenIndex =
-            (fullscreenIndex + 1) % fullscreenImages.length;
+            (fullscreenIndex + 1) %
+            fullscreenImages.length;
         fullscreenImg.src = fullscreenImages[fullscreenIndex];
     };
 
@@ -564,7 +588,7 @@ function fullscreenKeyHandler(e) {
 }
 
 /* =========================================================
-   MEDIA + IFRAME
+   MEDIA + IFRAME APPENDERS
    ========================================================= */
 
 function appendMedia(mediaBox, container, src, type, post, titleDiv) {
@@ -613,12 +637,11 @@ function appendIframe(mediaBox, container, src, titleDiv) {
 scrollTopBtn.onclick = () =>
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-loadBtn.onclick = loadPosts;
-
 clearBtn.onclick = () => {
     input.value = "";
     results.innerHTML = "";
     postMediaList = [];
+    seenPostURLs.clear();
     forcedMode = null;
     colToggleBtn.textContent = "Columns: 3";
     applyColumnMode();
@@ -630,4 +653,4 @@ copyBtn.onclick = () =>
 zipBtn.onclick = () =>
     alert("ZIP downloads coming soon");
 
-/* END app.js v1.1.29 */
+/* END app.js v1.1.30 */
