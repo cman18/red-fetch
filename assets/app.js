@@ -1,8 +1,16 @@
 /* =========================================================
    app.js — Version v1.1.34
+   • Redgifs Worker fix (.mp4 + .webm)
+   • Uniform tile height compatibility (670px)
+   • Clickable URL under each card
+   • Ignore OnlyFans posts
+   • Full infinite scroll
+   • Title collapse logic maintained
    ========================================================= */
 
-/* -------------------- DOM -------------------- */
+/* ---------------------------------------------------------
+   DOM references
+--------------------------------------------------------- */
 
 const results = document.getElementById("results");
 const input = document.getElementById("input");
@@ -14,7 +22,9 @@ const scrollTopBtn = document.getElementById("scrollTopBtn");
 const resultsGrid = document.getElementById("results");
 const colToggleBtn = document.getElementById("colToggleBtn");
 
-/* -------------------- Globals -------------------- */
+/* ---------------------------------------------------------
+   Global state
+--------------------------------------------------------- */
 
 const REDGIFS_PROXY = "https://red.coffeemanhou.workers.dev/?id=";
 
@@ -25,10 +35,13 @@ let forcedMode = null;
 let postMediaList = [];
 const seenPostURLs = new Set();
 
-/* -------------------- Column Toggle -------------------- */
+/* ---------------------------------------------------------
+   Column Toggle
+--------------------------------------------------------- */
 
 function applyColumnMode() {
     resultsGrid.classList.remove("force-3-cols", "force-2-cols");
+
     if (forcedMode === "2") {
         resultsGrid.classList.add("force-2-cols");
         colToggleBtn.textContent = "Columns: 2";
@@ -45,7 +58,9 @@ colToggleBtn.onclick = () => {
     applyColumnMode();
 };
 
-/* -------------------- Username Parsing -------------------- */
+/* ---------------------------------------------------------
+   Username Extractor
+--------------------------------------------------------- */
 
 function extractUsername(text) {
     if (!text) return null;
@@ -61,10 +76,13 @@ function extractUsername(text) {
     if (m) return m[1];
 
     if (/^[A-Za-z0-9_-]{2,30}$/.test(text)) return text;
+
     return null;
 }
 
-/* -------------------- Redgifs helpers -------------------- */
+/* ---------------------------------------------------------
+   Redgifs Helpers
+--------------------------------------------------------- */
 
 function isRedgifsURL(url) {
     return url && url.includes("redgifs.com");
@@ -85,10 +103,12 @@ function extractRedgifsSlug(url) {
         /redgifs\.com\/ifr\/([A-Za-z0-9]+)/,
         /redgifs\.com\/([A-Za-z0-9]+)$/
     ];
+
     for (const p of patterns) {
         const m = url.match(p);
         if (m) return m[1];
     }
+
     return null;
 }
 
@@ -104,13 +124,14 @@ async function fetchRedgifsMP4(url) {
 
         const json = await res.json();
         return json.mp4 || null;
-
     } catch {
         return null;
     }
 }
 
-/* -------------------- Helpers -------------------- */
+/* ---------------------------------------------------------
+   GIF Helper
+--------------------------------------------------------- */
 
 function isGif(url) {
     return (
@@ -128,7 +149,9 @@ function convertGifToMP4(url) {
     return url;
 }
 
-/* -------------------- Title collapse -------------------- */
+/* ---------------------------------------------------------
+   Title Expand/Collapse
+--------------------------------------------------------- */
 
 function setupTitleBehavior(titleDiv) {
     const text = titleDiv.textContent.trim();
@@ -162,20 +185,21 @@ function setupTitleBehavior(titleDiv) {
     };
 }
 
-/* -------------------- OnlyFans filter -------------------- */
+/* ---------------------------------------------------------
+   Skip OnlyFans
+--------------------------------------------------------- */
 
 function shouldSkipOF(post) {
     const t = (post.title || "").toLowerCase();
     const s = (post.selftext || "").toLowerCase();
     const u = (post.url || "").toLowerCase();
-
-    if (t.includes("onlyfans") || s.includes("onlyfans") || u.includes("onlyfans.com"))
-        return true;
-
+    if (t.includes("onlyfans") || s.includes("onlyfans") || u.includes("onlyfans.com")) return true;
     return false;
 }
 
-/* -------------------- Broken gallery fallback -------------------- */
+/* ---------------------------------------------------------
+   Broken Gallery Fallback
+--------------------------------------------------------- */
 
 function renderCollapsedBrokenGallery(post) {
     const div = document.createElement("div");
@@ -186,26 +210,29 @@ function renderCollapsedBrokenGallery(post) {
     titleDiv.textContent = post.title || "";
     div.appendChild(titleDiv);
 
-    const mediaBox = document.createElement("div");
-    mediaBox.className = "tile-media";
+    const box = document.createElement("div");
+    box.className = "tile-media";
 
     const placeholder = document.createElement("div");
     placeholder.className = "placeholder-media";
     placeholder.textContent = "Text Post";
-    mediaBox.appendChild(placeholder);
+    box.appendChild(placeholder);
 
     const urlLine = document.createElement("div");
     urlLine.className = "post-url";
     urlLine.innerHTML = `<a href="${post.url}" target="_blank">${post.url}</a>`;
 
-    div.appendChild(mediaBox);
+    div.appendChild(box);
     div.appendChild(urlLine);
 
     setupTitleBehavior(titleDiv);
+
     results.appendChild(div);
 }
 
-/* -------------------- Render Post -------------------- */
+/* ---------------------------------------------------------
+   Main Render Function
+--------------------------------------------------------- */
 
 async function renderPost(post) {
     if (shouldSkipOF(post)) return;
@@ -226,7 +253,7 @@ async function renderPost(post) {
 
     const url = post.url || "";
 
-    /* ------- REAL GALLERY ------- */
+    /* ----- Gallery Handling ----- */
     if (post.is_gallery && post.media_metadata && post.gallery_data) {
         const ids = post.gallery_data.items.map(x => x.media_id);
 
@@ -235,13 +262,10 @@ async function renderPost(post) {
             if (!meta) return null;
 
             let src = meta?.s?.u || meta?.s?.gif || meta?.s?.mp4;
-
-            if (!src && meta?.p?.length) {
+            if (!src && meta?.p?.length)
                 src = meta.p[meta.p.length - 1].u;
-            }
 
             if (src) return src.replace(/&amp;/g, "&");
-
             return id ? `https://i.redd.it/${id}.jpg` : null;
         }).filter(Boolean);
 
@@ -254,13 +278,13 @@ async function renderPost(post) {
         return;
     }
 
-    /* ------- IMAGE ------- */
+    /* ----- Direct Image ----- */
     if (url.match(/\.(jpg|jpeg|png|webp)$/i)) {
         appendMedia(mediaBox, div, url, "image", post, titleDiv);
         return;
     }
 
-    /* ------- REDGIFS ------- */
+    /* ----- Redgifs ----- */
     if (isRedgifsURL(url)) {
         const mp4 = await fetchRedgifsMP4(url);
         if (mp4) {
@@ -269,10 +293,9 @@ async function renderPost(post) {
         }
     }
 
-    /* ------- YOUTUBE ------- */
+    /* ----- YouTube ----- */
     if (url.includes("youtube.com") || url.includes("youtu.be")) {
         let id = null;
-
         const m1 = url.match(/v=([^&]+)/);
         if (m1) id = m1[1];
 
@@ -280,40 +303,42 @@ async function renderPost(post) {
         if (!id && m2) id = m2[1];
 
         if (id) {
-            appendIframe(mediaBox, div, `https://www.youtube.com/embed/${id}`, titleDiv);
+            appendIframe(
+                mediaBox, div,
+                `https://www.youtube.com/embed/${id}`,
+                titleDiv
+            );
             return;
         }
     }
 
-    /* ------- GIF ------- */
+    /* ----- GIF ---- */
     if (isGif(url)) {
         appendMedia(mediaBox, div, convertGifToMP4(url), "gif", post, titleDiv);
         return;
     }
 
-    /* ------- REDDIT VIDEO ------- */
+    /* ----- Reddit video ---- */
     if (post.is_video && post.media?.reddit_video?.fallback_url) {
         appendMedia(
-            mediaBox,
-            div,
+            mediaBox, div,
             post.media.reddit_video.fallback_url,
-            "video",
-            post,
-            titleDiv
+            "video", post, titleDiv
         );
         return;
     }
 
-    /* ------- NORMAL IMAGE HINT ------- */
+    /* ----- Post-Hint image ---- */
     if (post.post_hint === "image") {
         appendMedia(mediaBox, div, url, "image", post, titleDiv);
         return;
     }
 
-    /* ------- TEXT POST ------- */
+    /* ----- TEXT POST ----- */
     const placeholder = document.createElement("div");
     placeholder.className = "placeholder-media";
     placeholder.textContent = "Text Post";
+
     mediaBox.appendChild(placeholder);
 
     const urlLine = document.createElement("div");
@@ -324,17 +349,19 @@ async function renderPost(post) {
     div.appendChild(urlLine);
 
     setupTitleBehavior(titleDiv);
+
     results.appendChild(div);
 }
 
-/* -------------------- Gallery Renderer -------------------- */
+/* ---------------------------------------------------------
+   Gallery Renderer
+--------------------------------------------------------- */
 
 function renderGallery(mediaBox, container, images, post, titleDiv) {
     let index = 0;
 
     const img = document.createElement("img");
     img.src = images[0];
-
     img.onclick = () => openFullscreenGallery(images, index);
 
     const left = document.createElement("div");
@@ -345,7 +372,9 @@ function renderGallery(mediaBox, container, images, post, titleDiv) {
     right.className = "gallery-arrow-main gallery-arrow-main-right";
     right.textContent = ">";
 
-    const update = () => { img.src = images[index]; };
+    const update = () => {
+        img.src = images[index];
+    };
 
     left.onclick = e => {
         e.stopPropagation();
@@ -371,10 +400,13 @@ function renderGallery(mediaBox, container, images, post, titleDiv) {
     container.appendChild(urlLine);
 
     setupTitleBehavior(titleDiv);
+
     results.appendChild(container);
 }
 
-/* -------------------- Fullscreen gallery -------------------- */
+/* ---------------------------------------------------------
+   Fullscreen Viewer
+--------------------------------------------------------- */
 
 let fullscreenOverlay = null;
 let fullscreenImg = null;
@@ -401,16 +433,15 @@ function openFullscreenGallery(images, startIndex) {
 
     left.onclick = e => {
         e.stopPropagation();
-        fullscreenIndex =
-            (fullscreenIndex - 1 + fullscreenImages.length) %
-            fullscreenImages.length;
+        fullscreenIndex = (fullscreenIndex - 1 + fullscreenImages.length) %
+                          fullscreenImages.length;
         fullscreenImg.src = fullscreenImages[fullscreenIndex];
     };
 
     right.onclick = e => {
         e.stopPropagation();
-        fullscreenIndex =
-            (fullscreenIndex + 1) % fullscreenImages.length;
+        fullscreenIndex = (fullscreenIndex + 1) %
+                          fullscreenImages.length;
         fullscreenImg.src = fullscreenImages[fullscreenIndex];
     };
 
@@ -427,30 +458,34 @@ function openFullscreenGallery(images, startIndex) {
 
 function closeFullscreenGallery() {
     if (!fullscreenOverlay) return;
+
     fullscreenOverlay.remove();
     fullscreenOverlay = null;
     fullscreenImg = null;
     fullscreenImages = [];
     fullscreenIndex = 0;
+
     document.removeEventListener("keydown", fullscreenKeyHandler);
 }
 
 function fullscreenKeyHandler(e) {
     if (e.key === "Escape") return closeFullscreenGallery();
+
     if (e.key === "ArrowRight") {
-        fullscreenIndex =
-            (fullscreenIndex + 1) % fullscreenImages.length;
+        fullscreenIndex = (fullscreenIndex + 1) % fullscreenImages.length;
         fullscreenImg.src = fullscreenImages[fullscreenIndex];
     }
+
     if (e.key === "ArrowLeft") {
-        fullscreenIndex =
-            (fullscreenIndex - 1 + fullscreenImages.length) %
-            fullscreenImages.length;
+        fullscreenIndex = (fullscreenIndex - 1 + fullscreenImages.length) %
+                          fullscreenImages.length;
         fullscreenImg.src = fullscreenImages[fullscreenIndex];
     }
 }
 
-/* -------------------- Media helpers -------------------- */
+/* ---------------------------------------------------------
+   Media Creation
+--------------------------------------------------------- */
 
 function appendMedia(mediaBox, container, src, type, post, titleDiv) {
     const el =
@@ -495,15 +530,20 @@ function appendIframe(mediaBox, container, src, titleDiv) {
     mediaBox.appendChild(iframe);
 
     container.appendChild(mediaBox);
+
     setupTitleBehavior(titleDiv);
 }
 
-/* -------------------- Scroll-To-Top -------------------- */
+/* ---------------------------------------------------------
+   Scroll to Top
+--------------------------------------------------------- */
 
 scrollTopBtn.onclick = () =>
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-/* -------------------- Infinite Scroll -------------------- */
+/* ---------------------------------------------------------
+   Infinite Scroll
+--------------------------------------------------------- */
 
 async function loadMorePosts() {
     if (loadingMore || !afterToken || !currentUser) return;
@@ -520,8 +560,8 @@ async function loadMorePosts() {
         const data = await res.json();
         afterToken = data.data.after;
 
-        for (const p of data.data.children) {
-            await renderPost(p.data);
+        for (const child of data.data.children) {
+            await renderPost(child.data);
         }
     } catch {}
 
@@ -536,7 +576,9 @@ window.addEventListener("scroll", async () => {
     if (nearBottom) await loadMorePosts();
 });
 
-/* -------------------- Load Posts -------------------- */
+/* ---------------------------------------------------------
+   Load Button
+--------------------------------------------------------- */
 
 loadBtn.onclick = async () => {
     results.innerHTML = "";
@@ -564,8 +606,8 @@ loadBtn.onclick = async () => {
         const data = await res.json();
         afterToken = data.data.after;
 
-        for (const p of data.data.children) {
-            await renderPost(p.data);
+        for (const child of data.data.children) {
+            await renderPost(child.data);
         }
 
     } catch {
@@ -573,7 +615,9 @@ loadBtn.onclick = async () => {
     }
 };
 
-/* -------------------- Misc -------------------- */
+/* ---------------------------------------------------------
+   Other Buttons
+--------------------------------------------------------- */
 
 clearBtn.onclick = () => {
     input.value = "";
