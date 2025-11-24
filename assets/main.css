@@ -31,7 +31,7 @@ body {
     color: #b8ffff;
 }
 
-/* Box container */
+/* Top control panel */
 #container {
     max-width: 1000px;
     margin: 0 auto;
@@ -75,7 +75,10 @@ button {
     font-weight: bold;
 }
 
-/* Grid */
+/* =========================================================
+   GRID
+   ========================================================= */
+
 .grid-results {
     max-width: 1300px;
     margin: 40px auto;
@@ -88,7 +91,7 @@ button {
 .force-2-cols { grid-template-columns: repeat(2, 1fr) !important; }
 
 /* =========================================================
-   TILE LOCKING
+   TILE LOCKING (EVERY TILE EXACT SAME HEIGHT)
    ========================================================= */
 
 .post {
@@ -99,11 +102,11 @@ button {
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 670px; 
+    height: 670px;
     overflow: hidden;
 }
 
-/* TITLE (lock to one line) */
+/* Title locked to one line */
 .post-title {
     background: #161616;
     font-size: 15px;
@@ -116,7 +119,7 @@ button {
     padding-bottom: 4px;
 }
 
-/* CLICKABLE URL line (lock one line) */
+/* Bottom URL line - clickable + single line */
 .post-url a {
     color: #88ddee;
     text-decoration: none;
@@ -126,7 +129,7 @@ button {
     display: block;
 }
 
-/* MEDIA BOX fixed 4:5 */
+/* 4:5 media box fixed */
 .tile-media {
     position: relative;
     width: 100%;
@@ -145,6 +148,7 @@ button {
     object-fit: cover;
 }
 
+/* Placeholder */
 .placeholder-media {
     width: 100%;
     height: 100%;
@@ -156,7 +160,7 @@ button {
     align-items: center;
 }
 
-/* Gallery Arrows */
+/* Gallery arrows */
 .gallery-arrow-main {
     position: absolute;
     top: 50%;
@@ -173,7 +177,7 @@ button {
 .gallery-arrow-main-left { left: 6px; }
 .gallery-arrow-main-right { right: 6px; }
 
-/* Fullscreen */
+/* Fullscreen viewer */
 .fullscreen-media {
     position: fixed;
     inset: 0;
@@ -205,15 +209,7 @@ button {
 .gallery-arrow-left { left: 30px; }
 .gallery-arrow-right { right: 30px; }
 
-/* Scroll Top */
+/* Scroll To Top button */
 #scrollTopBtn {
     position: fixed;
     bottom: 25px;
-    right: 25px;
-    background: #44e0d4;
-    color: black;
-    padding: 14px 20px;
-    border-radius: 50px;
-    cursor: pointer;
-    z-index: 9999;
-}
