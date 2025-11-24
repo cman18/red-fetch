@@ -9,6 +9,7 @@
 
 <body>
 
+<!-- Version Box -->
 <div id="debug-version-box">
     Index v1.1.34<br>
     CSS v1.1.34<br>
@@ -18,6 +19,7 @@
 <div class="title">Red Pull</div>
 
 <div id="container">
+
     <div class="input-row">
         <div class="prefix">u/</div>
         <input id="input" placeholder="https://www.reddit.com/user/someuser/">
@@ -30,13 +32,14 @@
     </div>
 
     <div class="filters-row">
-        <label><input type="checkbox" checked id="filterImages"> Images</label>
-        <label><input type="checkbox" checked id="filterVideos"> Videos</label>
-        <label><input type="checkbox" checked id="filterOther"> Other</label>
+        <label><input type="checkbox" id="filterImages" checked> Images</label>
+        <label><input type="checkbox" id="filterVideos" checked> Videos</label>
+        <label><input type="checkbox" id="filterOther" checked> Other</label>
 
         <button id="colToggleBtn">Columns: 3</button>
         <button id="zipBtn">Download ZIP</button>
     </div>
+
 </div>
 
 <div id="results" class="grid-results"></div>
