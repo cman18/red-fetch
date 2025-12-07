@@ -159,10 +159,10 @@ h1 {
     object-fit: contain;
 }
 
-/* Fullscreen arrows placed at bottom */
+/* Fullscreen arrows – group them bottom-left together */
 .gallery-arrow {
     position: absolute;
-    bottom: 30px;              /* ⬅ moved from middle to bottom */
+    bottom: 30px;               /* place both arrows at the bottom */
     padding: 16px 22px;
     background: rgba(255, 255, 255, 0.18);
     cursor: pointer;
@@ -173,13 +173,16 @@ h1 {
     border-radius: 10px;
 }
 
+/* LEFT arrow stays where it was */
 .gallery-arrow-left {
-    left: 30px;                /* bottom-left */
+    left: 30px;
 }
 
+/* RIGHT arrow moved next to LEFT arrow */
 .gallery-arrow-right {
-    right: 30px;               /* bottom-right */
+    left: 90px;                 /* 30px + 60px spacing */
 }
+
 
 
 /* Top button */
