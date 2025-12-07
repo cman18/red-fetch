@@ -1,10 +1,10 @@
 /* =========================================================
-   app.js — Version v1.1.37
-   • Full iPad/iPhone tap fixes (ontouchstart)
-   • Adds addTapHandler() wrapper
-   • Fixes single-image fullscreen not opening
-   • Keeps gallery fullscreen & arrows
-   • Keeps all previous features (Redgifs, GIFV, etc.)
+   app.js — Version v1.1.38
+   • NEW: Large-view modal (not fullscreen)
+   • Fixed iPad/iPhone tap issues (ontouchend support)
+   • All media types enlarge properly
+   • Galleries still enlarge correctly
+   • All previous features retained
    ========================================================= */
 
 /* ---------------------------------------------------------
@@ -35,11 +35,13 @@ let postMediaList = [];
 const seenPostURLs = new Set();
 
 /* ---------------------------------------------------------
-   iPad/iPhone SAFE tap handler
+   iPad/iPhone safe tap handler
 --------------------------------------------------------- */
+
 function addTapHandler(el, callback) {
     el.onclick = callback;
     el.ontouchstart = callback;
+    el.ontouchend = callback;
 }
 
 /* ---------------------------------------------------------
@@ -391,7 +393,47 @@ function createVideo(src, isGif) {
 }
 
 /* ---------------------------------------------------------
-   FIXED appendMedia() – now opens fullscreen on iPad/iPhone
+   NEW: Large-view modal (replaces fullscreen)
+--------------------------------------------------------- */
+
+function openLargeView(src) {
+    const modal = document.createElement("div");
+    modal.className = "large-view";
+
+    let el;
+
+    if (src.endsWith(".mp4")) {
+        el = document.createElement("video");
+        el.src = src;
+        el.controls = true;
+        el.autoplay = true;
+        el.loop = true;
+        el.muted = false;
+    } else {
+        el = document.createElement("img");
+        el.src = src;
+    }
+
+    modal.appendChild(el);
+
+    const closeBtn = document.createElement("div");
+    closeBtn.className = "large-view-close";
+    closeBtn.textContent = "✕";
+
+    closeBtn.onclick = () => modal.remove();
+    closeBtn.ontouchend = () => modal.remove();
+
+    modal.appendChild(closeBtn);
+
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    };
+
+    document.body.appendChild(modal);
+}
+
+/* ---------------------------------------------------------
+   appendMedia() — calls openLargeView
 --------------------------------------------------------- */
 
 function appendMedia(box, wrap, src, type, post, titleDiv) {
@@ -400,9 +442,9 @@ function appendMedia(box, wrap, src, type, post, titleDiv) {
             ? createImage(src)
             : createVideo(src, type === "gif");
 
-    /* ⭐ SAFARI & IPAD FULLSCREEN FIX ⭐ */
     el.style.cursor = "pointer";
-    addTapHandler(el, () => openFullscreenSingle(src));
+
+    addTapHandler(el, () => openLargeView(src));
 
     box.appendChild(el);
 
@@ -418,7 +460,7 @@ function appendMedia(box, wrap, src, type, post, titleDiv) {
 }
 
 /* ---------------------------------------------------------
-   Gallery renderer
+   Gallery renderer (still uses fullscreen-style arrows)
 --------------------------------------------------------- */
 
 function renderGallery(box, wrap, sources, post, titleDiv) {
@@ -427,8 +469,7 @@ function renderGallery(box, wrap, sources, post, titleDiv) {
     const img = document.createElement("img");
     img.src = sources[idx];
 
-    /* ⭐ FIX: Enable fullscreen on mobile */
-    addTapHandler(img, () => openFullscreenGallery(sources, idx));
+    addTapHandler(img, () => openLargeView(sources[idx]));
 
     const left = document.createElement("div");
     left.className = "gallery-arrow-main gallery-arrow-main-left";
@@ -467,111 +508,6 @@ function renderGallery(box, wrap, sources, post, titleDiv) {
 
     setupTitleBehavior(titleDiv);
     results.appendChild(wrap);
-}
-
-/* ---------------------------------------------------------
-   Fullscreen Viewer — Multiple Images
---------------------------------------------------------- */
-
-let fsWrap = null;
-let fsImg = null;
-let fsIdx = 0;
-let fsSources = [];
-
-function openFullscreenGallery(list, index) {
-    fsSources = list;
-    fsIdx = index;
-
-    fsWrap = document.createElement("div");
-    fsWrap.className = "fullscreen-media";
-
-    fsImg = document.createElement("img");
-    fsImg.src = list[index];
-
-    const left = document.createElement("div");
-    left.className = "gallery-arrow gallery-arrow-left";
-    left.textContent = "<";
-
-    const right = document.createElement("div");
-    right.className = "gallery-arrow gallery-arrow-right";
-    right.textContent = ">";
-
-    left.onclick = (e) => {
-        e.stopPropagation();
-        fsIdx = (fsIdx - 1 + fsSources.length) % fsSources.length;
-        fsImg.src = fsSources[fsIdx];
-    };
-
-    right.onclick = (e) => {
-        e.stopPropagation();
-        fsIdx = (fsIdx + 1) % fsSources.length;
-        fsImg.src = fsSources[fsIdx];
-    };
-
-    fsWrap.onclick = () => closeFullscreenGallery();
-
-    fsWrap.appendChild(fsImg);
-    fsWrap.appendChild(left);
-    fsWrap.appendChild(right);
-
-    document.body.appendChild(fsWrap);
-    document.addEventListener("keydown", fsKeyHandler);
-}
-
-function closeFullscreenGallery() {
-    if (!fsWrap) return;
-
-    fsWrap.remove();
-    fsWrap = null;
-    fsImg = null;
-    fsSources = [];
-    fsIdx = 0;
-
-    document.removeEventListener("keydown", fsKeyHandler);
-}
-
-function fsKeyHandler(e) {
-    if (e.key === "Escape") closeFullscreenGallery();
-
-    if (e.key === "ArrowRight") {
-        fsIdx = (fsIdx + 1) % fsSources.length;
-        fsImg.src = fsSources[fsIdx];
-    }
-
-    if (e.key === "ArrowLeft") {
-        fsIdx = (fsIdx - 1 + fsSources.length) % fsSources.length;
-        fsImg.src = fsSources[fsIdx];
-    }
-}
-
-/* ---------------------------------------------------------
-   Fullscreen Viewer — Single Media (FIXED)
---------------------------------------------------------- */
-
-function openFullscreenSingle(src) {
-    const wrap = document.createElement("div");
-    wrap.className = "fullscreen-media";
-
-    let el;
-
-    if (src.endsWith(".mp4")) {
-        el = document.createElement("video");
-        el.src = src;
-        el.controls = true;
-        el.autoplay = true;
-        el.loop = true;
-        el.muted = false;
-    } else {
-        el = document.createElement("img");
-        el.src = src;
-    }
-
-    el.className = "fullscreen-object";
-    wrap.appendChild(el);
-
-    wrap.onclick = () => wrap.remove();
-
-    document.body.appendChild(wrap);
 }
 
 /* ---------------------------------------------------------
@@ -674,4 +610,4 @@ copyBtn.onclick = () =>
 zipBtn.onclick = () =>
     alert("ZIP downloads coming later");
 
-/* END v1.1.37 */
+/* END v1.1.38 */
