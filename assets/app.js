@@ -1,15 +1,7 @@
 /* =========================================================
-   app.js — Version v1.1.35 (Patched)
-   • Perfect 4:5 tile fill
-   • Fullscreen restored for ALL media
-   • Redgifs Worker MP4
-   • Imgur GIF/GIFV → MP4
-   • Gfycat → MP4
-   • Reddit GIF → MP4
-   • Full gallery support
-   • Title collapse
-   • OF filtering
-   • Infinite scrolling
+   app.js — Version v1.1.36
+   • Fix: All media now open fullscreen again
+   • Includes your full tile layout + gallery + workers
    ========================================================= */
 
 /* ---------------------------------------------------------
@@ -150,7 +142,9 @@ function convertGifToMP4(url) {
     if (!url) return null;
 
     if (url.includes("i.imgur.com")) {
-        return url.replace(".gifv", ".mp4").replace(".gif", ".mp4");
+        return url
+            .replace(".gifv", ".mp4")
+            .replace(".gif", ".mp4");
     }
 
     if (url.includes("gfycat.com")) {
@@ -385,17 +379,14 @@ function createVideo(src, isGif) {
     return v;
 }
 
-/* ---------------------------------------------------------
-   ⭐ FIXED — Fullscreen restore for ALL media
---------------------------------------------------------- */
-
+/* ⭐ FULLSCREEN CLICK FIX ADDED HERE ⭐ */
 function appendMedia(box, wrap, src, type, post, titleDiv) {
     const el =
         type === "image"
             ? createImage(src)
             : createVideo(src, type === "gif");
 
-    /* FULLSCREEN CLICK FIX */
+    /* ENABLE FULLSCREEN CLICK */
     el.style.cursor = "pointer";
     el.onclick = () => openFullscreenSingle(src);
 
@@ -463,35 +454,7 @@ function renderGallery(box, wrap, sources, post, titleDiv) {
 }
 
 /* ---------------------------------------------------------
-   Fullscreen — Single media
---------------------------------------------------------- */
-
-function openFullscreenSingle(src) {
-    const wrap = document.createElement("div");
-    wrap.className = "fullscreen-media";
-
-    let el;
-    if (src.endsWith(".mp4")) {
-        el = document.createElement("video");
-        el.src = src;
-        el.controls = true;
-        el.autoplay = true;
-        el.loop = true;
-        el.muted = false;
-    } else {
-        el = document.createElement("img");
-        el.src = src;
-    }
-
-    wrap.appendChild(el);
-
-    wrap.onclick = () => wrap.remove();
-
-    document.body.appendChild(wrap);
-}
-
-/* ---------------------------------------------------------
-   Fullscreen — Gallery mode
+   Fullscreen Viewer — Multiple Images
 --------------------------------------------------------- */
 
 let fsWrap = null;
@@ -563,6 +526,36 @@ function fsKeyHandler(e) {
         fsIdx = (fsIdx - 1 + fsSources.length) % fsSources.length;
         fsImg.src = fsSources[fsIdx];
     }
+}
+
+/* ---------------------------------------------------------
+   Fullscreen Viewer — Single Media
+--------------------------------------------------------- */
+
+function openFullscreenSingle(src) {
+    const wrap = document.createElement("div");
+    wrap.className = "fullscreen-media";
+
+    let el;
+
+    if (src.endsWith(".mp4")) {
+        el = document.createElement("video");
+        el.src = src;
+        el.controls = true;
+        el.autoplay = true;
+        el.loop = true;
+        el.muted = false;
+    } else {
+        el = document.createElement("img");
+        el.src = src;
+    }
+
+    el.className = "fullscreen-object";
+    wrap.appendChild(el);
+
+    wrap.onclick = () => wrap.remove();
+
+    document.body.appendChild(wrap);
 }
 
 /* ---------------------------------------------------------
@@ -665,4 +658,4 @@ copyBtn.onclick = () =>
 zipBtn.onclick = () =>
     alert("ZIP downloads coming later");
 
-/* END v1.1.35-patched */
+/* END v1.1.36 */
