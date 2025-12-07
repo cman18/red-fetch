@@ -105,19 +105,17 @@ h1 {
 }
 
 /* GALLERY ARROWS (inner) */
-.gallery-arrow-main {
+.gallery-arrow {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 26px;
-    font-weight: bold;
-    color: white;
-    background: rgba(0,0,0,0.45);
-    padding: 6px 10px;
-    border-radius: 8px;
+    bottom: 30px;              /* ⬅ moved from middle to bottom */
+    padding: 16px 22px;
+    background: rgba(255, 255, 255, 0.18);
     cursor: pointer;
-    z-index: 10;
+    color: white;
+    font-size: 32px;
     user-select: none;
+    z-index: 100000;
+    border-radius: 10px;
 }
 
 .gallery-arrow-main-left {
