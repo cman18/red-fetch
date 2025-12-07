@@ -105,17 +105,19 @@ h1 {
 }
 
 /* GALLERY ARROWS (inner) */
-.gallery-arrow {
+.gallery-arrow-main {
     position: absolute;
-    bottom: 30px;              /* ⬅ moved from middle to bottom */
-    padding: 16px 22px;
-    background: rgba(255, 255, 255, 0.18);
-    cursor: pointer;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 26px;
+    font-weight: bold;
     color: white;
-    font-size: 32px;
+    background: rgba(0,0,0,0.45);
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 10;
     user-select: none;
-    z-index: 100000;
-    border-radius: 10px;
 }
 
 .gallery-arrow-main-left {
@@ -157,26 +159,28 @@ h1 {
     object-fit: contain;
 }
 
+/* Fullscreen arrows placed at bottom */
 .gallery-arrow {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 40px;
-    color: white;
-    background: rgba(0,0,0,0.45);
-    padding: 8px 14px;
-    border-radius: 12px;
+    bottom: 30px;              /* ⬅ moved from middle to bottom */
+    padding: 16px 22px;
+    background: rgba(255, 255, 255, 0.18);
     cursor: pointer;
-    z-index: 5001;
+    color: white;
+    font-size: 32px;
+    user-select: none;
+    z-index: 100000;
+    border-radius: 10px;
 }
 
 .gallery-arrow-left {
-    left: 30px;
+    left: 30px;                /* bottom-left */
 }
 
 .gallery-arrow-right {
-    right: 30px;
+    right: 30px;               /* bottom-right */
 }
+
 
 /* Top button */
 #scrollTopBtn {
