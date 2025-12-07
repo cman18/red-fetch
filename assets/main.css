@@ -184,7 +184,7 @@ h1 {
 #scrollTopBtn {
     position: fixed;
     bottom: 23px;
-    right: 23px;
+    left: 23px;
     background: #83f3df;
     color: #000;
     border: none;
