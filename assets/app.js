@@ -1,7 +1,10 @@
 /* =========================================================
-   app.js — Version v1.1.36
-   • Fix: All media now open fullscreen again
-   • Includes your full tile layout + gallery + workers
+   app.js — Version v1.1.37
+   • Full iPad/iPhone tap fixes (ontouchstart)
+   • Adds addTapHandler() wrapper
+   • Fixes single-image fullscreen not opening
+   • Keeps gallery fullscreen & arrows
+   • Keeps all previous features (Redgifs, GIFV, etc.)
    ========================================================= */
 
 /* ---------------------------------------------------------
@@ -30,6 +33,14 @@ let forcedMode = null;
 
 let postMediaList = [];
 const seenPostURLs = new Set();
+
+/* ---------------------------------------------------------
+   iPad/iPhone SAFE tap handler
+--------------------------------------------------------- */
+function addTapHandler(el, callback) {
+    el.onclick = callback;
+    el.ontouchstart = callback;
+}
 
 /* ---------------------------------------------------------
    Username extractor
@@ -379,16 +390,19 @@ function createVideo(src, isGif) {
     return v;
 }
 
-/* ⭐ FULLSCREEN CLICK FIX ADDED HERE ⭐ */
+/* ---------------------------------------------------------
+   FIXED appendMedia() – now opens fullscreen on iPad/iPhone
+--------------------------------------------------------- */
+
 function appendMedia(box, wrap, src, type, post, titleDiv) {
     const el =
         type === "image"
             ? createImage(src)
             : createVideo(src, type === "gif");
 
-    /* ENABLE FULLSCREEN CLICK */
+    /* ⭐ SAFARI & IPAD FULLSCREEN FIX ⭐ */
     el.style.cursor = "pointer";
-    el.onclick = () => openFullscreenSingle(src);
+    addTapHandler(el, () => openFullscreenSingle(src));
 
     box.appendChild(el);
 
@@ -412,7 +426,9 @@ function renderGallery(box, wrap, sources, post, titleDiv) {
 
     const img = document.createElement("img");
     img.src = sources[idx];
-    img.onclick = () => openFullscreenGallery(sources, idx);
+
+    /* ⭐ FIX: Enable fullscreen on mobile */
+    addTapHandler(img, () => openFullscreenGallery(sources, idx));
 
     const left = document.createElement("div");
     left.className = "gallery-arrow-main gallery-arrow-main-left";
@@ -529,7 +545,7 @@ function fsKeyHandler(e) {
 }
 
 /* ---------------------------------------------------------
-   Fullscreen Viewer — Single Media
+   Fullscreen Viewer — Single Media (FIXED)
 --------------------------------------------------------- */
 
 function openFullscreenSingle(src) {
@@ -658,4 +674,4 @@ copyBtn.onclick = () =>
 zipBtn.onclick = () =>
     alert("ZIP downloads coming later");
 
-/* END v1.1.36 */
+/* END v1.1.37 */
