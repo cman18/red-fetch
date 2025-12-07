@@ -104,7 +104,7 @@ h1 {
     font-size: 26px;
 }
 
-/* GALLERY ARROWS (inner) */
+/* GALLERY ARROWS (inner, main feed) */
 .gallery-arrow-main {
     position: absolute;
     top: 50%;
@@ -140,10 +140,13 @@ h1 {
     color: #9df;
 }
 
-/* Fullscreen viewer */
+/* ============================
+   Fullscreen viewer (overlay)
+   ============================ */
 .fullscreen-media {
     position: fixed;
-    top: 0; left: 0;
+    top: 0; 
+    left: 0;
     width: 100vw;
     height: 100vh;
     background: rgba(0,0,0,0.92);
@@ -151,18 +154,24 @@ h1 {
     justify-content: center;
     align-items: center;
     z-index: 5000;
+
+    /* IMPORTANT: enables arrows to position correctly */
+    position: relative; /* <-- ADD THIS */
 }
 
-.fullscreen-media img {
+.fullscreen-media img,
+.fullscreen-media video {
     max-width: 90%;
     max-height: 90%;
     object-fit: contain;
 }
 
-/* Fullscreen arrows – group them bottom-left together */
+/* ------------------------------------------
+   Fullscreen navigation arrows (bottom-left)
+   ------------------------------------------ */
 .gallery-arrow {
     position: absolute;
-    bottom: 30px;               /* place both arrows at the bottom */
+    bottom: 30px;
     padding: 16px 22px;
     background: rgba(255, 255, 255, 0.18);
     cursor: pointer;
@@ -173,17 +182,15 @@ h1 {
     border-radius: 10px;
 }
 
-/* LEFT arrow stays where it was */
+/* LEFT stays bottom-left */
 .gallery-arrow-left {
     left: 30px;
 }
 
-/* RIGHT arrow moved next to LEFT arrow */
+/* RIGHT placed next to the left arrow */
 .gallery-arrow-right {
-    left: 90px;                 /* 30px + 60px spacing */
+    left: 90px; /* adjust for spacing */
 }
-
-
 
 /* Top button */
 #scrollTopBtn {
