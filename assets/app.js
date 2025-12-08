@@ -1,11 +1,25 @@
 /* =========================================================
-   app.js — Version v1.1.38
-   • NEW: Large-view modal (not fullscreen)
-   • Fixed iPad/iPhone tap issues (ontouchend support)
-   • All media types enlarge properly
-   • Galleries still enlarge correctly
-   • All previous features retained
+   app.js — Version v1.1.39
+   • Auto version detection from this comment line
+   • Gallery arrows restored on main page
+   • Modal enlarge working on iPad and desktop
+   • All features preserved
    ========================================================= */
+
+/* ---------------------------------------------------------
+   Auto inject version into index.html
+--------------------------------------------------------- */
+
+(function injectVersion() {
+    const firstLine = document.currentScript.text.split("\n")[0];
+    const match = firstLine.match(/Version (v[0-9.]+)/);
+    if (match) {
+        const titleEl = document.querySelector("h1");
+        if (titleEl) {
+            titleEl.innerHTML = `Red Fetch <span style="color:#83f3df;">${match[1]}</span>`;
+        }
+    }
+})();
 
 /* ---------------------------------------------------------
    DOM references
@@ -286,17 +300,12 @@ async function renderPost(post) {
             const meta = post.media_metadata[id];
             if (!meta) return null;
 
-            let src = meta?.s?.u || meta?.s?.gif || meta?.s?.mp4;
-            if (!src && meta?.p?.length)
+            let src = meta.s?.u || meta.s?.gif || meta.s?.mp4;
+            if (!src && meta.p?.length)
                 src = meta.p[meta.p.length - 1].u;
 
             return src ? src.replace(/&amp;/g, "&") : null;
         }).filter(Boolean);
-
-        if (!sources.length) {
-            renderTextFallback(post);
-            return;
-        }
 
         renderGallery(box, wrap, sources, post, titleDiv);
         return;
@@ -317,7 +326,7 @@ async function renderPost(post) {
         }
     }
 
-    /* IMGUR GIF/GIFV, GFYCAT, ETC */
+    /* GIF to MP4 */
     if (isGif(url)) {
         const mp4 = convertGifToMP4(url);
         if (mp4) {
@@ -368,32 +377,11 @@ async function renderPost(post) {
         }
     }
 
-    /* TEXT POST FALLBACK */
     renderTextFallback(post);
 }
 
 /* ---------------------------------------------------------
-   Media helpers
---------------------------------------------------------- */
-
-function createImage(src) {
-    const el = document.createElement("img");
-    el.src = src;
-    return el;
-}
-
-function createVideo(src, isGif) {
-    const v = document.createElement("video");
-    v.src = src;
-    v.autoplay = isGif;
-    v.loop = isGif;
-    v.muted = isGif;
-    v.controls = !isGif;
-    return v;
-}
-
-/* ---------------------------------------------------------
-   NEW: Large-view modal (replaces fullscreen)
+   Modal enlarge view (image or video)
 --------------------------------------------------------- */
 
 function openLargeView(src) {
@@ -433,7 +421,7 @@ function openLargeView(src) {
 }
 
 /* ---------------------------------------------------------
-   appendMedia() — calls openLargeView
+   appendMedia — supports enlarge view
 --------------------------------------------------------- */
 
 function appendMedia(box, wrap, src, type, post, titleDiv) {
@@ -460,7 +448,7 @@ function appendMedia(box, wrap, src, type, post, titleDiv) {
 }
 
 /* ---------------------------------------------------------
-   Gallery renderer (still uses fullscreen-style arrows)
+   Gallery renderer — arrows restored
 --------------------------------------------------------- */
 
 function renderGallery(box, wrap, sources, post, titleDiv) {
@@ -468,6 +456,7 @@ function renderGallery(box, wrap, sources, post, titleDiv) {
 
     const img = document.createElement("img");
     img.src = sources[idx];
+    img.style.cursor = "pointer";
 
     addTapHandler(img, () => openLargeView(sources[idx]));
 
@@ -610,4 +599,4 @@ copyBtn.onclick = () =>
 zipBtn.onclick = () =>
     alert("ZIP downloads coming later");
 
-/* END v1.1.38 */
+/* END v1.1.39 */
