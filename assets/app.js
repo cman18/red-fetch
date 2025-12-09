@@ -1,9 +1,9 @@
 /* =========================================================
-   app.js — Version v1.1.45
-   • Fixed Reddit gallery parsing (no more black images)
-   • Fixed preview.redd.it → i.redd.it conversion
-   • Removed tracking params from gallery images
-   • Fully compatible with your existing UI
+   app.js — Version v1.1.46
+   • Full gallery fix (meta.s + meta.p fallback)
+   • Stable URL cleaner with preview.redd.it safeguards
+   • No UI changes
+   • No logic removed
    ========================================================= */
 
 /* ---------------------------------------------------------
@@ -19,14 +19,17 @@ const zipBtn = document.getElementById("zipBtn");
 const colToggleBtn = document.getElementById("colToggleBtn");
 const scrollTopBtn = document.getElementById("scrollTopBtn");
 const modeSelect = document.getElementById("modeSelect");
+const imagesChk = document.getElementById("imagesChk");
+const videosChk = document.getElementById("videosChk");
+const otherChk = document.getElementById("otherChk");
+
+/* ---------------------------------------------------------
+   Global state
+--------------------------------------------------------- */
 
 const REDGIFS_PROXY = "https://red.coffeemanhou.workers.dev/?id=";
 
-/* ---------------------------------------------------------
-   Global State
---------------------------------------------------------- */
-
-let currentUser = null;
+let currentTarget = null;
 let afterToken = null;
 let loadingMore = false;
 let forcedMode = "3";
@@ -34,29 +37,45 @@ let forcedMode = "3";
 const seenPostURLs = new Set();
 
 /* ---------------------------------------------------------
-   Helpers: Username extractor
+   Extract username or subreddit
 --------------------------------------------------------- */
 
-function extractUsername(text) {
-    if (!text) return null;
-    text = text.trim();
+function extractTarget(raw) {
+    if (!raw) return null;
 
-    let m = text.match(/\/u\/([^\/]+)/i);
-    if (m) return m[1];
+    const t = raw.trim();
 
-    m = text.match(/\bu\/([A-Za-z0-9_-]+)/i);
-    if (m) return m[1];
+    if (modeSelect.value === "u") {
+        const m1 = t.match(/\/u\/([^\/]+)/i);
+        if (m1) return { type: "user", name: m1[1] };
 
-    m = text.match(/reddit\.com\/user\/([^\/]+)/i);
-    if (m) return m[1];
+        const m2 = t.match(/reddit\.com\/user\/([^\/]+)/i);
+        if (m2) return { type: "user", name: m2[1] };
 
-    if (/^[A-Za-z0-9_-]{2,30}$/.test(text)) return text;
+        if (/^[A-Za-z0-9_-]{2,30}$/.test(t))
+            return { type: "user", name: t };
+
+        return null;
+    }
+
+    if (modeSelect.value === "r") {
+        const m1 = t.match(/\/r\/([^\/]+)/i);
+        if (m1) return { type: "sub", name: m1[1] };
+
+        const m2 = t.match(/reddit\.com\/r\/([^\/]+)/i);
+        if (m2) return { type: "sub", name: m2[1] };
+
+        if (/^[A-Za-z0-9_]{2,30}$/.test(t))
+            return { type: "sub", name: t };
+
+        return null;
+    }
 
     return null;
 }
 
 /* ---------------------------------------------------------
-   Column Toggle
+   Column toggle
 --------------------------------------------------------- */
 
 function applyColumnMode() {
@@ -76,7 +95,7 @@ colToggleBtn.onclick = () => {
 };
 
 /* ---------------------------------------------------------
-   Redgifs
+   Redgifs helpers
 --------------------------------------------------------- */
 
 function isRedgifsURL(url) {
@@ -103,6 +122,7 @@ function extractRedgifsSlug(url) {
         const m = url.match(p);
         if (m) return m[1];
     }
+
     return null;
 }
 
@@ -111,27 +131,30 @@ async function fetchRedgifsMP4(url) {
     if (!slug) return null;
 
     try {
-        const res = await fetch(REDGIFS_PROXY + slug);
-        if (!res.ok) return null;
-        const json = await res.json();
+        const res = await fetch(REDGIFS_PROXY + slug, {
+            headers: { "Cache-Control": "no-cache" }
+        });
 
-        return json.mp4 || null;
+        if (!res.ok) return null;
+
+        const j = await res.json();
+        return j.mp4 || null;
     } catch {
         return null;
     }
 }
 
 /* ---------------------------------------------------------
-   GIF Conversions
+   GIF handling
 --------------------------------------------------------- */
 
 function isGif(url) {
     return (
         url &&
         (url.endsWith(".gif") ||
-            url.endsWith(".gifv") ||
-            url.includes("gfycat") ||
-            url.includes("gif"))
+         url.endsWith(".gifv") ||
+         url.includes("gfycat") ||
+         url.includes("gif"))
     );
 }
 
@@ -143,7 +166,7 @@ function convertGifToMP4(url) {
 
     if (url.includes("gfycat.com")) {
         const id = url.split("/").pop().split("-")[0];
-        return `https://giant.gfycat.com/${id}.mp4`;
+        return "https://giant.gfycat.com/" + id + ".mp4";
     }
 
     if (url.endsWith(".gifv")) return url.replace(".gifv", ".mp4");
@@ -153,39 +176,90 @@ function convertGifToMP4(url) {
 }
 
 /* ---------------------------------------------------------
-   Title toggle
+   Title expansion
 --------------------------------------------------------- */
 
-function setupTitleBehavior(el) {
-    const txt = el.textContent.trim();
-    if (!txt) return;
+function setupTitleBehavior(titleDiv) {
+    const original = titleDiv.textContent.trim();
+    if (!original) return;
 
-    const m = document.createElement("div");
-    m.style.position = "absolute";
-    m.style.visibility = "hidden";
-    m.style.whiteSpace = "nowrap";
-    m.textContent = txt;
-    document.body.appendChild(m);
+    const temp = document.createElement("div");
+    temp.style.position = "absolute";
+    temp.style.visibility = "hidden";
+    temp.style.whiteSpace = "nowrap";
+    temp.style.fontSize = window.getComputedStyle(titleDiv).fontSize;
+    temp.textContent = original;
 
-    if (m.clientWidth > el.clientWidth) {
-        const arrow = document.createElement("span");
-        arrow.className = "title-arrow";
-        arrow.textContent = "⌄";
-        el.appendChild(arrow);
+    document.body.appendChild(temp);
+    const fullW = temp.clientWidth;
+    temp.remove();
 
-        arrow.onclick = (e) => {
-            e.stopPropagation();
-            const exp = el.classList.toggle("full");
-            arrow.textContent = exp ? "⌃" : "⌄";
-            el.style.whiteSpace = exp ? "normal" : "nowrap";
-        };
-    }
+    if (fullW <= titleDiv.clientWidth) return;
 
-    m.remove();
+    const arrow = document.createElement("span");
+    arrow.className = "title-arrow";
+    arrow.textContent = "⌄";
+
+    titleDiv.appendChild(arrow);
+
+    arrow.onclick = (e) => {
+        e.stopPropagation();
+        const expanded = titleDiv.classList.toggle("full");
+        arrow.textContent = expanded ? "⌃" : "⌄";
+        titleDiv.style.whiteSpace = expanded ? "normal" : "nowrap";
+    };
 }
 
 /* ---------------------------------------------------------
-   Gallery parsing — FIXED
+   OnlyFans skip
+--------------------------------------------------------- */
+
+function shouldSkipOF(post) {
+    const t = (post.title || "").toLowerCase();
+    const s = (post.selftext || "").toLowerCase();
+    const u = (post.url || "").toLowerCase();
+    return (
+        t.includes("onlyfans") ||
+        s.includes("onlyfans") ||
+        u.includes("onlyfans.com")
+    );
+}
+
+/* ---------------------------------------------------------
+   Text fallback
+--------------------------------------------------------- */
+
+function renderTextFallback(post) {
+    const wrap = document.createElement("div");
+    wrap.className = "post";
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "post-title";
+    titleDiv.textContent = post.title || "";
+    wrap.appendChild(titleDiv);
+
+    const box = document.createElement("div");
+    box.className = "tile-media";
+
+    const txt = document.createElement("div");
+    txt.className = "placeholder-media";
+    txt.textContent = "Text Post";
+
+    box.appendChild(txt);
+
+    const urlLine = document.createElement("div");
+    urlLine.className = "post-url";
+    urlLine.innerHTML = "<a href='" + post.url + "' target='_blank'>" + post.url + "</a>";
+
+    wrap.appendChild(box);
+    wrap.appendChild(urlLine);
+
+    setupTitleBehavior(titleDiv);
+    results.appendChild(wrap);
+}
+
+/* ---------------------------------------------------------
+   GALLERY URL FIX (v1.1.46 PATCH)
 --------------------------------------------------------- */
 
 function extractGalleryURL(meta) {
@@ -193,32 +267,31 @@ function extractGalleryURL(meta) {
 
     let src = null;
 
-    if (meta.s) {
-        src = meta.s.u || meta.s.mp4 || meta.s.gif;
-    }
+    if (meta.s)
+        src = meta.s.u || meta.s.gif || meta.s.mp4 || null;
 
-    if (!src && meta.p?.length) {
+    if (!src && meta.p && meta.p.length)
         src = meta.p[meta.p.length - 1].u;
-    }
 
     if (!src) return null;
 
     src = src.replace(/&amp;/g, "&");
 
-    // Convert preview.redd.it → i.redd.it
-    src = src.replace(/preview\.redd\.it/g, "i.redd.it");
+    if (src.includes("preview.redd.it"))
+        src = src.replace("preview.redd.it", "i.redd.it");
 
-    // Remove query params that break images
-    src = src.replace(/\?.*$/, "");
+    src = src.split("?")[0];
 
     return src;
 }
 
 /* ---------------------------------------------------------
-   Rendering posts
+   MAIN RENDER
 --------------------------------------------------------- */
 
 async function renderPost(post) {
+    if (shouldSkipOF(post)) return;
+
     if (seenPostURLs.has(post.url)) return;
     seenPostURLs.add(post.url);
 
@@ -235,27 +308,24 @@ async function renderPost(post) {
 
     const url = post.url || "";
 
-    /* --- GALLERY FIXED --- */
     if (post.is_gallery && post.media_metadata && post.gallery_data) {
         const ids = post.gallery_data.items.map(i => i.media_id);
+        const sources = ids.map(id => extractGalleryURL(post.media_metadata[id])).filter(Boolean);
 
-        const sources = ids
-            .map(id => extractGalleryURL(post.media_metadata[id]))
-            .filter(Boolean);
-
-        if (sources.length) {
-            renderGallery(box, wrap, sources, post, titleDiv);
+        if (!sources.length) {
+            renderTextFallback(post);
             return;
         }
+
+        renderGallery(box, wrap, sources, post, titleDiv);
+        return;
     }
 
-    /* IMAGES */
     if (url.match(/\.(jpg|jpeg|png|webp)$/i)) {
         appendMedia(box, wrap, url, "image", post, titleDiv);
         return;
     }
 
-    /* REDGIFS */
     if (isRedgifsURL(url)) {
         const mp4 = await fetchRedgifsMP4(url);
         if (mp4) {
@@ -264,7 +334,6 @@ async function renderPost(post) {
         }
     }
 
-    /* GIF */
     if (isGif(url)) {
         const mp4 = convertGifToMP4(url);
         if (mp4) {
@@ -273,25 +342,16 @@ async function renderPost(post) {
         }
     }
 
-    /* REDDIT VIDEO */
-    if (post.is_video && post.media?.reddit_video?.fallback_url) {
-        appendMedia(
-            box,
-            wrap,
-            post.media.reddit_video.fallback_url,
-            "video",
-            post,
-            titleDiv
-        );
+    if (post.is_video && post.media && post.media.reddit_video) {
+        appendMedia(box, wrap, post.media.reddit_video.fallback_url, "video", post, titleDiv);
         return;
     }
 
-    /* TEXT POST */
     renderTextFallback(post);
 }
 
 /* ---------------------------------------------------------
-   appendMedia
+   MEDIA helpers
 --------------------------------------------------------- */
 
 function createImage(src) {
@@ -300,21 +360,18 @@ function createImage(src) {
     return el;
 }
 
-function createVideo(src, auto) {
+function createVideo(src, isGif) {
     const v = document.createElement("video");
     v.src = src;
-    v.autoplay = auto;
-    v.loop = auto;
-    v.muted = auto;
-    v.controls = !auto;
+    v.autoplay = isGif;
+    v.loop = isGif;
+    v.muted = isGif;
+    v.controls = !isGif;
     return v;
 }
 
 function appendMedia(box, wrap, src, type, post, titleDiv) {
-    const el =
-        type === "image"
-            ? createImage(src)
-            : createVideo(src, type === "gif");
+    const el = type === "image" ? createImage(src) : createVideo(src, type === "gif");
 
     el.style.cursor = "pointer";
     el.onclick = () => openLargeView(src);
@@ -323,17 +380,16 @@ function appendMedia(box, wrap, src, type, post, titleDiv) {
 
     const urlLine = document.createElement("div");
     urlLine.className = "post-url";
-    urlLine.innerHTML = `<a href="${post.url}" target="_blank">${post.url}</a>`;
+    urlLine.innerHTML = "<a href='" + post.url + "' target='_blank'>" + post.url + "</a>";
 
     wrap.appendChild(box);
     wrap.appendChild(urlLine);
-
     setupTitleBehavior(titleDiv);
     results.appendChild(wrap);
 }
 
 /* ---------------------------------------------------------
-   Gallery renderer
+   GALLERY MAIN VIEW
 --------------------------------------------------------- */
 
 function renderGallery(box, wrap, sources, post, titleDiv) {
@@ -374,16 +430,16 @@ function renderGallery(box, wrap, sources, post, titleDiv) {
 
     const urlLine = document.createElement("div");
     urlLine.className = "post-url";
-    urlLine.innerHTML = `<a href="${post.url}" target="_blank">${post.url}</a>`;
+    urlLine.innerHTML = "<a href='" + post.url + "' target='_blank'>" + post.url + "</a>";
+
     wrap.appendChild(box);
     wrap.appendChild(urlLine);
-
     setupTitleBehavior(titleDiv);
     results.appendChild(wrap);
 }
 
 /* ---------------------------------------------------------
-   Large View (modal)
+   LARGE VIEW
 --------------------------------------------------------- */
 
 function openLargeView(src) {
@@ -397,7 +453,6 @@ function openLargeView(src) {
         el.controls = true;
         el.autoplay = true;
         el.loop = true;
-        el.muted = false;
     } else {
         el = document.createElement("img");
         el.src = src;
@@ -411,140 +466,91 @@ function openLargeView(src) {
     closeBtn.onclick = () => modal.remove();
 
     modal.appendChild(closeBtn);
-    modal.onclick = (e) => {
-        if (e.target === modal) modal.remove();
-    };
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 
     document.body.appendChild(modal);
 }
 
 /* ---------------------------------------------------------
-   Text fallback
+   Scroll to Top
 --------------------------------------------------------- */
 
-function renderTextFallback(post) {
-    const wrap = document.createElement("div");
-    wrap.className = "post";
-
-    const titleDiv = document.createElement("div");
-    titleDiv.className = "post-title";
-    titleDiv.textContent = post.title || "";
-
-    const box = document.createElement("div");
-    box.className = "tile-media";
-
-    const ph = document.createElement("div");
-    ph.className = "placeholder-media";
-    ph.textContent = "Text Post";
-
-    box.appendChild(ph);
-
-    const urlLine = document.createElement("div");
-    urlLine.className = "post-url";
-    urlLine.innerHTML = `<a href="${post.url}" target="_blank">${post.url}</a>`;
-
-    wrap.appendChild(titleDiv);
-    wrap.appendChild(box);
-    wrap.appendChild(urlLine);
-
-    setupTitleBehavior(titleDiv);
-    results.appendChild(wrap);
-}
+scrollTopBtn.onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
 /* ---------------------------------------------------------
-   Scroll-to-top
---------------------------------------------------------- */
-
-scrollTopBtn.onclick = () =>
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-/* ---------------------------------------------------------
-   Infinite Scroll
+   Infinite scroll
 --------------------------------------------------------- */
 
 async function loadMore() {
-    if (loadingMore || !afterToken || !currentUser) return;
+    if (loadingMore || !afterToken || !currentTarget) return;
+
     loadingMore = true;
 
     try {
-        const url =
-            modeSelect.value === "u"
-                ? `https://api.reddit.com/user/${currentUser}/submitted?raw_json=1&after=${afterToken}`
-                : `https://api.reddit.com/r/${currentUser}/hot?raw_json=1&after=${afterToken}`;
+        let url =
+            currentTarget.type === "user"
+                ? "https://api.reddit.com/user/" + currentTarget.name + "/submitted?raw_json=1&after=" + afterToken
+                : "https://api.reddit.com/r/" + currentTarget.name + "/hot?raw_json=1&after=" + afterToken;
 
         const res = await fetch(url);
         if (!res.ok) return;
 
-        const data = await res.json();
-        afterToken = data.data.after;
+        const j = await res.json();
+        afterToken = j.data.after;
 
-        for (const child of data.data.children) {
+        for (const child of j.data.children)
             await renderPost(child.data);
-        }
     } catch {}
 
     loadingMore = false;
 }
 
 window.addEventListener("scroll", async () => {
-    const near =
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 1200;
-
-    if (near) await loadMore();
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1200)
+        await loadMore();
 });
 
 /* ---------------------------------------------------------
-   Load Button
+   LOAD BUTTON
 --------------------------------------------------------- */
 
 loadBtn.onclick = async () => {
     results.innerHTML = "";
     seenPostURLs.clear();
     afterToken = null;
-    currentUser = null;
+    currentTarget = null;
 
     const raw = input.value.trim();
+    const t = extractTarget(raw);
 
-    if (!raw) {
-        results.innerHTML = `<div class="post">No input provided.</div>`;
+    if (!t) {
+        results.innerHTML = "<div class='post'>Invalid input.</div>";
         return;
     }
 
-    if (modeSelect.value === "u") {
-        const user = extractUsername(raw);
-        if (!user) {
-            results.innerHTML =
-                `<div class="post">Invalid username or URL.</div>`;
-            return;
-        }
-        currentUser = user;
-    } else {
-        currentUser = raw.replace(/[^A-Za-z0-9_+]/g, "");
-    }
+    currentTarget = t;
 
     try {
         const url =
-            modeSelect.value === "u"
-                ? `https://api.reddit.com/user/${currentUser}/submitted?raw_json=1`
-                : `https://api.reddit.com/r/${currentUser}/hot?raw_json=1`;
+            t.type === "user"
+                ? "https://api.reddit.com/user/" + t.name + "/submitted?raw_json=1"
+                : "https://api.reddit.com/r/" + t.name + "/hot?raw_json=1";
 
         const res = await fetch(url);
         if (!res.ok) throw new Error();
 
-        const data = await res.json();
-        afterToken = data.data.after;
+        const j = await res.json();
+        afterToken = j.data.after;
 
-        for (const child of data.data.children) {
+        for (const child of j.data.children)
             await renderPost(child.data);
-        }
     } catch {
-        results.innerHTML = `<div class="post">Failed loading posts.</div>`;
+        results.innerHTML = "<div class='post'>Failed loading posts.</div>";
     }
 };
 
 /* ---------------------------------------------------------
-   Buttons
+   OTHER BUTTONS
 --------------------------------------------------------- */
 
 clearBtn.onclick = () => {
@@ -552,13 +558,10 @@ clearBtn.onclick = () => {
     results.innerHTML = "";
     seenPostURLs.clear();
     afterToken = null;
-    currentUser = null;
+    currentTarget = null;
 };
 
-copyBtn.onclick = () =>
-    navigator.clipboard.writeText(input.value.trim());
+copyBtn.onclick = () => navigator.clipboard.writeText(input.value.trim());
+zipBtn.onclick = () => alert("ZIP coming later");
 
-zipBtn.onclick = () =>
-    alert("ZIP downloads coming later");
-
-/* END v1.1.45 */
+/* END v1.1.46 */
