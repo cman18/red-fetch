@@ -1,21 +1,29 @@
 /* =========================================================
-   app.js — Version v1.1.40
-   • Stable version label (no auto-fetch)
-   • Packaged Reddit videos supported
+   app.js — Version v1.1.41
+   • Version box injection (title unaffected)
+   • u/ vs r/ dropdown support
+   • Packaged-media MP4 support
    • Redgifs proxy support
-   • Gallery arrows restored
-   • Modal enlarge view for images + videos
-   • iPad-friendly tap handlers
+   • Gallery arrows (main page)
+   • Modal enlarge view
+   • iPad tap compatibility
+   • No layout changes
    ========================================================= */
 
 
 /* ---------------------------------------------------------
-   Inject version into header safely
+   VERSION BOX INJECTION (SAFE)
 --------------------------------------------------------- */
 
 document.addEventListener("DOMContentLoaded", () => {
-    const h = document.querySelector("h1");
-    if (h) h.innerHTML = `Red Fetch <span style="color:#83f3df;">v1.1.40</span>`;
+    const box = document.getElementById("versionBox");
+    if (box) {
+        box.innerHTML = `
+            Index v1.1.41<br>
+            CSS v1.1.41<br>
+            JS v1.1.41
+        `;
+    }
 });
 
 
@@ -23,31 +31,33 @@ document.addEventListener("DOMContentLoaded", () => {
    DOM references
 --------------------------------------------------------- */
 
-const results = document.getElementById("results");
-const input = document.getElementById("input");
-const loadBtn = document.getElementById("loadBtn");
-const clearBtn = document.getElementById("clearBtn");
-const copyBtn = document.getElementById("copyBtn");
-const zipBtn = document.getElementById("zipBtn");
-const colToggleBtn = document.getElementById("colToggleBtn");
-const scrollTopBtn = document.getElementById("scrollTopBtn");
+const results       = document.getElementById("results");
+const input         = document.getElementById("input");
+const modeSelect    = document.getElementById("modeSelect");
+const loadBtn       = document.getElementById("loadBtn");
+const clearBtn      = document.getElementById("clearBtn");
+const copyBtn       = document.getElementById("copyBtn");
+const zipBtn        = document.getElementById("zipBtn");
+const colToggleBtn  = document.getElementById("colToggleBtn");
+const scrollTopBtn  = document.getElementById("scrollTopBtn");
 
 
 /* ---------------------------------------------------------
-   Global state
+   GLOBAL STATE
 --------------------------------------------------------- */
 
-let currentUser = null;
-let afterToken = null;
-let loadingMore = false;
-let forcedMode = null;
-
+let currentUser   = null;
+let currentSub    = null;
+let afterToken    = null;
+let loadingMore   = false;
+let forcedMode    = "3";
 const seenPostURLs = new Set();
+
 const REDGIFS_PROXY = "https://red.coffeemanhou.workers.dev/?id=";
 
 
 /* ---------------------------------------------------------
-   Tap handler (fixes iPad click)
+   iPad/iPhone TAP HANDLER
 --------------------------------------------------------- */
 
 function addTap(el, fn) {
@@ -57,35 +67,32 @@ function addTap(el, fn) {
 
 
 /* ---------------------------------------------------------
-   Username parsing
+   EXTRACT USERNAME OR SUBREDDIT (text only)
 --------------------------------------------------------- */
 
-function extractUsername(text) {
-    if (!text) return null;
-    text = text.trim();
+function extractPlainValue(txt) {
+    if (!txt) return null;
+    let t = txt.trim();
 
-    let m = text.match(/\/u\/([^\/]+)/i);
-    if (m) return m[1];
+    // Remove /u/, u/, /r/, r/, etc.
+    t = t.replace(/^\/?u\//i, "");
+    t = t.replace(/^\/?r\//i, "");
 
-    m = text.match(/reddit\.com\/user\/([^\/]+)/i);
-    if (m) return m[1];
+    // Strip trailing slashes
+    t = t.replace(/\/+$/, "");
 
-    m = text.match(/\bu\/([A-Za-z0-9_-]+)/i);
-    if (m) return m[1];
+    if (!t) return null;
 
-    if (/^[A-Za-z0-9_-]{2,30}$/.test(text)) return text;
-
-    return null;
+    return t;
 }
 
 
 /* ---------------------------------------------------------
-   Column toggle
+   COLUMN TOGGLE
 --------------------------------------------------------- */
 
 function applyColumnMode() {
     results.classList.remove("force-2-cols", "force-3-cols");
-
     if (forcedMode === "2") {
         results.classList.add("force-2-cols");
         colToggleBtn.textContent = "Columns: 2";
@@ -96,13 +103,13 @@ function applyColumnMode() {
 }
 
 colToggleBtn.onclick = () => {
-    forcedMode = forcedMode === "2" ? "3" : "2";
+    forcedMode = forcedMode === "3" ? "2" : "3";
     applyColumnMode();
 };
 
 
 /* ---------------------------------------------------------
-   REDGIFS utilities
+   REDGIFS UTILITIES
 --------------------------------------------------------- */
 
 function isRedgifsURL(url) {
@@ -110,10 +117,12 @@ function isRedgifsURL(url) {
 }
 
 function extractRedgifsSlug(url) {
+    if (!url) return null;
+
     try {
         if (url.includes("out.reddit.com")) {
-            const dest = new URL(url).searchParams.get("url");
-            if (dest) url = dest;
+            const real = new URL(url).searchParams.get("url");
+            if (real) url = real;
         }
     } catch {}
 
@@ -147,7 +156,7 @@ async function fetchRedgifsMP4(url) {
 
 
 /* ---------------------------------------------------------
-   GIF → MP4 conversion
+   GIF → MP4
 --------------------------------------------------------- */
 
 function isGif(url) {
@@ -163,8 +172,9 @@ function isGif(url) {
 function convertGifToMP4(url) {
     if (!url) return null;
 
-    if (url.includes("i.imgur.com"))
+    if (url.includes("i.imgur.com")) {
         return url.replace(".gifv", ".mp4").replace(".gif", ".mp4");
+    }
 
     if (url.includes("gfycat.com")) {
         const id = url.split("/").pop().split("-")[0];
@@ -179,7 +189,7 @@ function convertGifToMP4(url) {
 
 
 /* ---------------------------------------------------------
-   Title collapse
+   TITLE COLLAPSE
 --------------------------------------------------------- */
 
 function setupTitleBehavior(div) {
@@ -194,14 +204,15 @@ function setupTitleBehavior(div) {
     measure.textContent = text;
 
     document.body.appendChild(measure);
-    const fullW = measure.clientWidth;
+    const fullWidth = measure.clientWidth;
     measure.remove();
 
-    if (fullW <= div.clientWidth) return;
+    if (fullWidth <= div.clientWidth) return;
 
     const arrow = document.createElement("span");
     arrow.className = "title-arrow";
     arrow.textContent = "⌄";
+
     div.appendChild(arrow);
 
     arrow.onclick = (e) => {
@@ -214,12 +225,13 @@ function setupTitleBehavior(div) {
 
 
 /* ---------------------------------------------------------
-   Create media elements
+   CREATE MEDIA ELEMENTS
 --------------------------------------------------------- */
 
 function createImage(src) {
     const el = document.createElement("img");
     el.src = src;
+    el.loading = "lazy";
     return el;
 }
 
@@ -230,15 +242,16 @@ function createVideo(src, auto) {
     v.loop = auto;
     v.muted = auto;
     v.controls = !auto;
+    v.playsInline = true;
     return v;
 }
 
 
 /* ---------------------------------------------------------
-   Modal enlarge view
+   MODAL ENLARGE
 --------------------------------------------------------- */
 
-function openLarge(src) {
+function openLargeView(src) {
     const wrap = document.createElement("div");
     wrap.className = "large-view";
 
@@ -249,6 +262,7 @@ function openLarge(src) {
         el.controls = true;
         el.autoplay = true;
         el.loop = true;
+        el.muted = false;
     } else {
         el = document.createElement("img");
         el.src = src;
@@ -261,7 +275,7 @@ function openLarge(src) {
     closeBtn.textContent = "✕";
 
     closeBtn.onclick = () => wrap.remove();
-    wrap.onclick = e => { if (e.target === wrap) wrap.remove(); };
+    wrap.onclick = (e) => { if (e.target === wrap) wrap.remove(); };
 
     wrap.appendChild(closeBtn);
     document.body.appendChild(wrap);
@@ -278,13 +292,14 @@ function appendMedia(box, wrap, src, type, post, titleDiv) {
         : createVideo(src, type === "gif");
 
     el.style.cursor = "pointer";
-    addTap(el, () => openLarge(src));
+    addTap(el, () => openLargeView(src));
 
     box.appendChild(el);
 
     const urlLine = document.createElement("div");
     urlLine.className = "post-url";
     urlLine.innerHTML = `<a href="${post.url}" target="_blank">${post.url}</a>`;
+
     wrap.appendChild(box);
     wrap.appendChild(urlLine);
 
@@ -294,7 +309,7 @@ function appendMedia(box, wrap, src, type, post, titleDiv) {
 
 
 /* ---------------------------------------------------------
-   GALLERY (with arrows on main page)
+   GALLERY
 --------------------------------------------------------- */
 
 function renderGallery(box, wrap, list, post, titleDiv) {
@@ -303,7 +318,7 @@ function renderGallery(box, wrap, list, post, titleDiv) {
     const img = document.createElement("img");
     img.src = list[idx];
     img.style.cursor = "pointer";
-    addTap(img, () => openLarge(list[idx]));
+    addTap(img, () => openLargeView(list[idx]));
 
     const left = document.createElement("div");
     left.className = "gallery-arrow-main gallery-arrow-main-left";
@@ -315,13 +330,13 @@ function renderGallery(box, wrap, list, post, titleDiv) {
 
     const update = () => img.src = list[idx];
 
-    left.onclick = e => {
+    left.onclick = (e) => {
         e.stopPropagation();
         idx = (idx - 1 + list.length) % list.length;
         update();
     };
 
-    right.onclick = e => {
+    right.onclick = (e) => {
         e.stopPropagation();
         idx = (idx + 1) % list.length;
         update();
@@ -344,7 +359,7 @@ function renderGallery(box, wrap, list, post, titleDiv) {
 
 
 /* ---------------------------------------------------------
-   MAIN renderPost
+   MAIN RENDER
 --------------------------------------------------------- */
 
 async function renderPost(post) {
@@ -364,11 +379,11 @@ async function renderPost(post) {
 
     const url = post.url || "";
 
-    /* GALLERY */
+    /* ----- GALLERY ----- */
     if (post.is_gallery && post.media_metadata && post.gallery_data) {
-        const ids = post.gallery_data.items.map(i => i.media_id);
+        const ids = post.gallery_data.items.map((i) => i.media_id);
 
-        const sources = ids.map(id => {
+        const list = ids.map((id) => {
             const meta = post.media_metadata[id];
             if (!meta) return null;
 
@@ -376,80 +391,86 @@ async function renderPost(post) {
             if (!s && meta.p?.length)
                 s = meta.p[meta.p.length - 1].u;
 
-            return s ? s.replace(/&amp;/g,"&") : null;
+            return s ? s.replace(/&amp;/g, "&") : null;
         }).filter(Boolean);
 
-        return renderGallery(box, wrap, sources, post, titleDiv);
+        return renderGallery(box, wrap, list, post, titleDiv);
     }
 
-    /* IMAGES */
-    if (url.match(/\.(jpg|jpeg|png|webp)$/i))
+    /* ----- IMAGES ----- */
+    if (url.match(/\.(jpg|jpeg|png|webp)$/i)) {
         return appendMedia(box, wrap, url, "image", post, titleDiv);
+    }
 
-    /* REDGIFS */
+    /* ----- REDGIFS ----- */
     if (isRedgifsURL(url)) {
         const mp4 = await fetchRedgifsMP4(url);
         if (mp4) return appendMedia(box, wrap, mp4, "gif", post, titleDiv);
     }
 
-    /* GIF → MP4 */
+    /* ----- GIF → MP4 ----- */
     if (isGif(url)) {
         const mp4 = convertGifToMP4(url);
         if (mp4) return appendMedia(box, wrap, mp4, "gif", post, titleDiv);
     }
 
-    /* REDDIT PACKAGED MEDIA */
-    if (post.secure_media?.reddit_video?.fallback_url) {
-        return appendMedia(
-            box, wrap,
-            post.secure_media.reddit_video.fallback_url,
-            "video",
-            post, titleDiv
-        );
-    }
+    /* ----- REDDIT HOSTED VIDEO (packaged-media) ----- */
+    const dash = post.secure_media?.reddit_video?.fallback_url;
+    if (dash) return appendMedia(box, wrap, dash, "video", post, titleDiv);
 
-    /* TEXT FALLBACK */
-    const t = document.createElement("div");
-    t.textContent = "Text Post";
-    box.appendChild(t);
+    /* ----- TEXT FALLBACK ----- */
+    const ph = document.createElement("div");
+    ph.className = "placeholder-media";
+    ph.textContent = "Text Post";
+    box.appendChild(ph);
+
     wrap.appendChild(box);
+    setupTitleBehavior(titleDiv);
     results.appendChild(wrap);
 }
 
 
 /* ---------------------------------------------------------
-   Infinite scroll
+   INFINITE SCROLL
 --------------------------------------------------------- */
 
 async function loadMore() {
-    if (!currentUser || loadingMore || !afterToken) return;
+    if (loadingMore || !afterToken) return;
 
     loadingMore = true;
 
     try {
-        const url = `https://api.reddit.com/user/${currentUser}/submitted?raw_json=1&after=${afterToken}`;
+        let url;
+
+        if (currentUser) {
+            url = `https://api.reddit.com/user/${currentUser}/submitted?raw_json=1&after=${afterToken}`;
+        } else if (currentSub) {
+            url = `https://api.reddit.com/r/${currentSub}/hot?raw_json=1&after=${afterToken}`;
+        } else return;
+
         const res = await fetch(url);
         if (!res.ok) throw 0;
 
         const data = await res.json();
         afterToken = data.data.after;
 
-        for (const child of data.data.children)
+        for (const child of data.data.children) {
             await renderPost(child.data);
-
+        }
     } catch {}
 
     loadingMore = false;
 }
 
 window.addEventListener("scroll", async () => {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1200)
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1200) {
         await loadMore();
+    }
 });
 
 
 /* ---------------------------------------------------------
-   Load button
+   LOAD BUTTON HANDLER
 --------------------------------------------------------- */
 
 loadBtn.onclick = async () => {
@@ -457,28 +478,37 @@ loadBtn.onclick = async () => {
     seenPostURLs.clear();
     afterToken = null;
     currentUser = null;
+    currentSub = null;
 
     const raw = input.value.trim();
-    const user = extractUsername(raw);
+    const mode = modeSelect.value; // "user" or "subreddit"
+    const value = extractPlainValue(raw);
 
-    if (!user) {
-        results.innerHTML = "<div class='post'>Invalid user</div>";
+    if (!value) {
+        results.innerHTML = "<div class='post'>Invalid input</div>";
         return;
     }
 
-    currentUser = user;
-
     try {
-        const url = `https://api.reddit.com/user/${user}/submitted?raw_json=1`;
+        let url;
+
+        if (mode === "user") {
+            currentUser = value;
+            url = `https://api.reddit.com/user/${value}/submitted?raw_json=1`;
+        } else {
+            currentSub = value;
+            url = `https://api.reddit.com/r/${value}/hot?raw_json=1`;
+        }
+
         const res = await fetch(url);
         if (!res.ok) throw 0;
 
         const data = await res.json();
         afterToken = data.data.after;
 
-        for (const child of data.data.children)
+        for (const child of data.data.children) {
             await renderPost(child.data);
-
+        }
     } catch {
         results.innerHTML = "<div class='post'>Failed loading posts</div>";
     }
@@ -486,7 +516,7 @@ loadBtn.onclick = async () => {
 
 
 /* ---------------------------------------------------------
-   Other buttons
+   OTHER BUTTONS
 --------------------------------------------------------- */
 
 clearBtn.onclick = () => {
@@ -495,14 +525,16 @@ clearBtn.onclick = () => {
     seenPostURLs.clear();
     afterToken = null;
     currentUser = null;
+    currentSub = null;
 };
 
 copyBtn.onclick = () =>
     navigator.clipboard.writeText(input.value.trim());
 
 zipBtn.onclick = () =>
-    alert("ZIP download coming later.");
+    alert("ZIP downloads coming later");
 
 scrollTopBtn.onclick = () =>
     window.scrollTo({ top: 0, behavior: "smooth" });
 
+/* END v1.1.41 */
