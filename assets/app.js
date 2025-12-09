@@ -1,6 +1,6 @@
 /* =========================================================
-   app.js — Version v1.1.42
-   Fully working u/ + r/ + Cloudflare proxy
+   app.js — Version v1.1.43
+   Gallery fix: image load hook + forced visible tiles
 ========================================================= */
 
 const results = document.getElementById("results");
@@ -140,6 +140,11 @@ function renderTextFallback(post) {
     results.appendChild(wrap);
 }
 
+/* Fade-in image helper */
+function fadeIn(el) {
+    el.onload = () => { el.style.opacity = 1; };
+}
+
 /* Render post */
 async function renderPost(post) {
     const url = post.url || "";
@@ -160,10 +165,14 @@ async function renderPost(post) {
         const sources = ids.map(id => {
             const meta = post.media_metadata[id];
             if (!meta) return null;
+
             let src = meta.s?.u || meta.s?.mp4 || meta.s?.gif;
-            if (!src && meta.p?.length) src = meta.p[meta.p.length-1].u;
-            return src ? src.replace(/&amp;/g,"&") : null;
+            if (!src && meta.p?.length)
+                src = meta.p[meta.p.length - 1].u;
+
+            return src ? src.replace(/&amp;/g, "&") : null;
         }).filter(Boolean);
+
         return renderGallery(box, wrap, sources, post, titleDiv);
     }
 
@@ -236,6 +245,7 @@ function openLarge(src) {
         el = document.createElement("img");
         el.src = src;
     }
+    fadeIn(el);
     m.appendChild(el);
 
     const x = document.createElement("div");
@@ -252,8 +262,8 @@ function openLarge(src) {
 /* Media add */
 function appendMedia(box, wrap, src, type, post, titleDiv) {
     const el = type === "image" ?
-        (() => { const i = document.createElement("img"); i.src = src; return i; })() :
-        (() => { const v = document.createElement("video"); v.src = src; v.autoplay = type==="gif"; v.loop = type==="gif"; v.muted = type==="gif"; return v; })();
+        (() => { const i = document.createElement("img"); i.src = src; fadeIn(i); return i; })() :
+        (() => { const v = document.createElement("video"); v.src = src; fadeIn(v); v.autoplay = type==="gif"; v.loop = type==="gif"; v.muted = type==="gif"; return v; })();
 
     el.style.cursor = "pointer";
     el.onclick = () => openLarge(src);
@@ -270,12 +280,13 @@ function appendMedia(box, wrap, src, type, post, titleDiv) {
     results.appendChild(wrap);
 }
 
-/* Gallery */
+/* Gallery FIXED */
 function renderGallery(box, wrap, list, post, titleDiv) {
     let i = 0;
 
     const img = document.createElement("img");
     img.src = list[0];
+    fadeIn(img);
     img.onclick = () => openLarge(list[i]);
 
     const left = document.createElement("div");
@@ -286,10 +297,14 @@ function renderGallery(box, wrap, list, post, titleDiv) {
     right.className = "gallery-arrow-main gallery-arrow-main-right";
     right.textContent = ">";
 
-    const update = () => { img.src = list[i]; };
+    const update = () => {
+        img.style.opacity = 0;
+        img.src = list[i];
+        fadeIn(img);
+    };
 
-    left.onclick = e => { e.stopPropagation(); i = (i-1+list.length) % list.length; update(); };
-    right.onclick = e => { e.stopPropagation(); i = (i+1) % list.length; update(); };
+    left.onclick = e => { e.stopPropagation(); i = (i - 1 + list.length) % list.length; update(); };
+    right.onclick = e => { e.stopPropagation(); i = (i + 1) % list.length; update(); };
 
     box.appendChild(img);
     box.appendChild(left);
@@ -341,7 +356,7 @@ window.addEventListener("scroll", async () => {
     loadingMore = false;
 });
 
-/* Load Button — FULL FIX */
+/* Load button */
 loadBtn.onclick = async () => {
     results.innerHTML = "";
     currentUser = null;
@@ -369,21 +384,19 @@ loadBtn.onclick = async () => {
         if (!res.ok) throw 0;
 
         const data = await res.json();
-
         const children =
             data.data?.children ? data.data.children :
             data.children ? data.children : [];
-
         afterToken = data.data?.after || null;
 
         for (const child of children) {
             await renderPost(child.data || child);
         }
-    } catch (e) {
+    } catch {
         results.innerHTML = "<div class='post'>Failed loading posts.</div>";
     }
 };
 
-clearBtn.onclick = () => { input.value=""; results.innerHTML=""; };
+clearBtn.onclick = () => { input.value = ""; results.innerHTML = ""; };
 copyBtn.onclick = () => navigator.clipboard.writeText(input.value.trim());
-zipBtn.onclick  = () => alert("ZIP coming later");
+zipBtn.onclick = () => alert("ZIP coming later");
