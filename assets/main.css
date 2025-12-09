@@ -1,10 +1,11 @@
 /* =========================================================
-   main.css — UI Restore Patch v1.1.41
-   EXACT LOOK MATCHING YOUR SCREENSHOT
+   main.css — Version v1.1.42 UI Shrink Patch
+   • Header = 20pt (~26px)
+   • Inputs/buttons/checkbox labels = 10pt (~13px)
+   • Version box controlled in index.html
    ========================================================= */
 
-/* ---------------- PAGE + HEADER ---------------- */
-
+/* Page + header */
 body {
     margin: 0;
     background: #0d0d0e;
@@ -13,64 +14,42 @@ body {
 }
 
 h1 {
-    font-size: 36px;
+    font-size: 26px;     /* << SHRUNK (was 42px) */
     color: #9ff;
     margin: 20px;
-    font-weight: bold;
 }
 
-/* ---------------- TOP BAR (u/ + input + Load Posts) ---------------- */
+/* ---------------- INPUT + DROPDOWN + BUTTONS ------------- */
 
-.top-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 20px;
-    margin-top: 10px;
-}
-
-/* u/ selector */
 .modeSelect {
-    font-size: 16px;
-    padding: 4px 6px;
-    height: 36px;
-    width: 65px;
+    font-size: 13px;     /* << SHRUNK (was 18px) */
+    padding: 4px 8px;
+    height: 32px;
     border-radius: 6px;
-    border: 1px solid #2b2d31;
-    background: #fff;
-    color: #000;
 }
 
-/* Search box */
 #input {
-    font-size: 16px;
-    padding: 8px 12px;
-    height: 36px;
-    flex: 1;
+    font-size: 13px;     /* << SHRUNK */
+    padding: 6px 10px;
+    height: 34px;
+    width: 100%;
     border-radius: 6px;
     border: 1px solid #2b2d31;
     background: #111;
     color: #eee;
 }
 
-/* Load Posts button */
 .loadBtn {
-    font-size: 16px;
-    padding: 8px 16px;
-    height: 38px;
+    font-size: 13px;     /* << SHRUNK */
+    padding: 6px 12px;
+    height: 34px;
     border-radius: 6px;
-    border: 1px solid #2b2d31;
-    background: #eee;
-    color: #000;
-    cursor: pointer;
 }
 
-/* ---------------- GENERIC BUTTONS ---------------- */
-
 button {
-    font-size: 16px;
-    padding: 8px 14px;
-    height: 36px;
+    font-size: 13px;     /* << SHRUNK */
+    padding: 6px 10px;
+    height: 32px;
     border-radius: 6px;
     border: 1px solid #2b2d31;
     background: #e5e5e5;
@@ -78,19 +57,18 @@ button {
     cursor: pointer;
 }
 
-/* ---------------- BUTTON ROW ---------------- */
+/* ---------------- CHECKBOX ROW ---------------- */
 
 .button-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 0 20px;
+    gap: 10px;
     margin-top: 14px;
     flex-wrap: wrap;
 }
 
 .button-row label {
-    font-size: 16px;
+    font-size: 13px;     /* << SHRUNK */
 }
 
 /* ---------------- GRID LAYOUT ---------------- */
@@ -103,8 +81,13 @@ button {
     margin: 20px auto 80px auto;
 }
 
-.force-2-cols { grid-template-columns: repeat(2, 1fr) !important; }
-.force-3-cols { grid-template-columns: repeat(3, 1fr) !important; }
+.force-2-cols {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+.force-3-cols {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
 
 /* ---------------- POST CARD ---------------- */
 
@@ -117,8 +100,8 @@ button {
 }
 
 .post-title {
-    padding: 10px 12px 8px 12px;
-    font-size: 15px;
+    padding: 8px 10px;
+    font-size: 13px;      /* << SHRUNK */
     font-weight: bold;
     color: #eee;
     white-space: nowrap;
@@ -126,12 +109,13 @@ button {
     text-overflow: ellipsis;
 }
 
-.post-title.full { white-space: normal; }
+.post-title.full {
+    white-space: normal;
+}
 
-/* Arrow beside title */
 .title-arrow {
-    margin-left: 6px;
-    font-size: 14px;
+    margin-left: 4px;
+    font-size: 13px;
     cursor: pointer;
     opacity: 0.7;
 }
@@ -152,30 +136,31 @@ button {
     object-fit: cover;
 }
 
-/* Placeholder for text posts */
+/* ---------------- TEXT PLACEHOLDER ---------------- */
+
 .placeholder-media {
     width: 100%;
     height: 100%;
     background: #000;
     color: #8be;
-    font-size: 22px;
+    font-size: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* ---------------- MAIN PAGE GALLERY ARROWS ---------------- */
+/* ---------------- GALLERY ARROWS ---------------- */
 
 .gallery-arrow-main {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     color: white;
-    font-size: 22px;
+    font-size: 22px;      /* slightly smaller */
     font-weight: bold;
     background: rgba(0,0,0,0.45);
-    padding: 6px 10px;
-    border-radius: 8px;
+    padding: 4px 8px;
+    border-radius: 6px;
     cursor: pointer;
     user-select: none;
 }
@@ -183,11 +168,10 @@ button {
 .gallery-arrow-main-left { left: 8px; }
 .gallery-arrow-main-right { right: 8px; }
 
-/* ---------------- URL LINE ---------------- */
-
+/* URL LINE */
 .post-url {
-    padding: 10px 12px 4px 12px;
-    font-size: 13px;
+    padding: 6px 10px;
+    font-size: 12px;      /* smaller */
     color: #9df;
     word-break: break-all;
 }
@@ -219,19 +203,19 @@ button {
 /* Fullscreen arrows */
 .gallery-arrow {
     position: absolute;
-    bottom: 30px;
+    bottom: 20px;
     color: white;
-    font-size: 28px;
-    padding: 14px 20px;
-    border-radius: 10px;
+    font-size: 26px;      /* smaller */
+    padding: 10px 16px;
+    border-radius: 8px;
     background: rgba(255,255,255,0.18);
     cursor: pointer;
     user-select: none;
     z-index: 8000;
 }
 
-.gallery-arrow-left  { left: 30px; }
-.gallery-arrow-right { left: 90px; }
+.gallery-arrow-left  { left: 20px; }
+.gallery-arrow-right { left: 70px; }
 
 /* ---------------- LARGE VIEW ---------------- */
 
@@ -256,25 +240,25 @@ button {
 
 .large-view-close {
     position: absolute;
-    top: 20px;
-    right: 30px;
-    font-size: 34px;
+    top: 16px;
+    right: 24px;
+    font-size: 32px;   /* smaller */
     cursor: pointer;
     color: white;
 }
 
-/* ---------------- SCROLL TO TOP ---------------- */
+/* ---------------- SCROLL TO TOP BUTTON ---------------- */
 
 #scrollTopBtn {
     position: fixed;
-    bottom: 23px;
-    left: 23px;
+    bottom: 20px;
+    left: 20px;
     background: #83f3df;
     color: #000;
     border: none;
-    padding: 10px 16px;
-    border-radius: 50px;
+    padding: 8px 14px;
+    border-radius: 40px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 13px;
     z-index: 3000;
 }
