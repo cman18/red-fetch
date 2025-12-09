@@ -11,7 +11,7 @@
 
     <title>Red Fetch</title>
 
-    <!-- VERSION BOX (top-right) -->
+    <!-- VERSION BOX -->
     <style>
         #versionBox {
             position: absolute;
@@ -19,39 +19,36 @@
             right: 15px;
             background: rgba(150, 180, 255, 0.15);
             color: #b7d9ff;
-            padding: 14px 22px;
-            border-radius: 14px;
-            font-size: 20px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-size: 6pt;                     /* << SHRUNK */
+            line-height: 1.3;
             border: 1px solid rgba(180, 210, 255, 0.35);
+            text-align: right;
         }
     </style>
 
-    <!-- Load CSS (cache-busted) -->
-    <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1.1.40">
+    <!-- Load CSS -->
+    <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1">
 </head>
 
 <body>
 
-    <h1 id="titleHeader">Red Fetch v1.1.40</h1>
+    <h1 id="titleHeader">Red Fetch</h1>
 
     <div id="versionBox">
-        Index v1.1.40<br>
-        CSS v1.1.40<br>
-        JS v1.1.40
+        Index v…<br>
+        CSS v…<br>
+        JS v…
     </div>
 
     <div class="top-bar">
-
-        <!-- u/ or r/ selector -->
         <select id="modeSelect" class="modeSelect">
             <option value="u">u/</option>
             <option value="r">r/</option>
         </select>
 
-        <!-- Input -->
         <input id="input" class="input" type="text" placeholder="User ID or URL here">
-
-        <!-- Load button -->
         <button id="loadBtn" class="loadBtn">Load Posts</button>
     </div>
 
@@ -72,22 +69,34 @@
 
     <button id="scrollTopBtn">Top</button>
 
+    <!-- JS -->
+    <script id="mainJS" src="assets/app.js?v=1"></script>
 
-    <!-- JS (cache-busted) -->
-    <script id="mainJS" src="assets/app.js?v=1.1.40"></script>
-
-    <!-- Runtime anti-cache injection -->
+    <!-- Auto inject version numbers -->
     <script>
-        (function() {
+        (function () {
             const ts = Date.now();
 
-            const css = document.getElementById("mainCSS");
-            const js  = document.getElementById("mainJS");
+            // Update CSS + JS cache-buster
+            document.getElementById("mainCSS").href = "assets/main.css?v=" + ts;
+            document.getElementById("mainJS").src   = "assets/app.js?v=" + ts;
 
-            css.href = "assets/main.css?v=" + ts;
-            js.src   = "assets/app.js?v=" + ts;
+            // Get version from app.js comment header
+            fetch("assets/app.js?v=" + ts)
+                .then(r => r.text())
+                .then(txt => {
+                    const match = txt.match(/Version (v[0-9.]+)/);
+                    const jsVer = match ? match[1] : "v?";
 
-            console.log("Cache bypass active:", ts);
+                    const cssVer = "v" + (document.getElementById("mainCSS").href.split("v=")[1] || "?");
+                    const idxVer = jsVer; // You want them all matched automatically
+
+                    document.getElementById("versionBox").innerHTML =
+                        `Index ${idxVer}<br>CSS ${cssVer}<br>JS ${jsVer}`;
+
+                    // Also update header text:
+                    document.getElementById("titleHeader").textContent = "Red Fetch " + jsVer;
+                });
         })();
     </script>
 
