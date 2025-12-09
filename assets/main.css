@@ -1,6 +1,7 @@
 /* =========================================================
-   main.css — Version v1.1.42 — UI sizing fix
-========================================================= */
+   main.css — Version v1.1.44
+   Small-font UI + checkboxes moved right of search bar
+   ========================================================= */
 
 body {
     margin: 0;
@@ -10,41 +11,61 @@ body {
 }
 
 h1 {
-    font-size: 20pt;
+    font-size: 28px;
     color: #9ff;
     margin: 20px;
 }
 
-/* INPUT + DROPDOWN */
+/* ROW 1 — dropdown + search + checkboxes */
+.top-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0 20px;
+    flex-wrap: nowrap;
+}
+
 .modeSelect {
-    font-size: 10pt;
-    padding: 4px 8px;
-    height: 32px;
+    font-size: 14px;
+    padding: 6px 10px;
+    height: 34px;
     border-radius: 6px;
 }
 
-#input {
-    font-size: 10pt;
-    padding: 6px 12px;
-    height: 32px;
+.input {
+    font-size: 14px;
+    padding: 8px 12px;
+    height: 34px;
     border-radius: 6px;
     border: 1px solid #2b2d31;
     background: #111;
     color: #eee;
+    flex: 1;
 }
 
-.loadBtn {
-    font-size: 10pt;
-    padding: 6px 12px;
-    height: 32px;
-    border-radius: 6px;
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-/* BUTTONS */
+.checkbox-group label {
+    font-size: 14px;
+}
+
+/* ROW 2 — buttons */
+.button-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 14px 20px 0 20px;
+    flex-wrap: wrap;
+}
+
 button {
-    font-size: 10pt;
-    padding: 6px 14px;
-    height: 32px;
+    font-size: 14px;
+    padding: 8px 12px;
+    height: 34px;
     border-radius: 6px;
     border: 1px solid #2b2d31;
     background: #e5e5e5;
@@ -52,50 +73,30 @@ button {
     cursor: pointer;
 }
 
-/* TOP BAR */
-.top-bar {
-    display: flex;
-    gap: 8px;
-    padding: 10px 20px;
-}
-
-/* BUTTON ROW */
-.button-row {
-    display: flex;
-    gap: 10px;
-    padding: 6px 20px 12px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.button-row label {
-    font-size: 10pt;
-}
-
 /* GRID */
 #results {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
+    gap: 18px;
     width: 96%;
-    margin: 20px auto;
+    margin: 20px auto 80px auto;
 }
 
 .force-2-cols { grid-template-columns: repeat(2, 1fr) !important; }
 .force-3-cols { grid-template-columns: repeat(3, 1fr) !important; }
 
-/* POST */
+/* POSTS */
 .post {
     background: #18191b;
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid #2b2d31;
     overflow: hidden;
-    padding-bottom: 8px;
+    padding-bottom: 10px;
 }
 
 .post-title {
-    padding: 8px 10px;
-    font-size: 12pt;
+    padding: 10px 12px 8px 12px;
+    font-size: 14px;
     font-weight: bold;
     white-space: nowrap;
     overflow: hidden;
@@ -104,17 +105,9 @@ button {
 
 .post-title.full { white-space: normal; }
 
-/* ARROWS */
-.title-arrow {
-    margin-left: 6px;
-    cursor: pointer;
-    opacity: 0.7;
-}
-
-/* MEDIA TILE */
 .tile-media {
     width: 100%;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 4/5;
     background: #000;
     position: relative;
 }
@@ -132,10 +125,11 @@ button {
     top: 50%;
     transform: translateY(-50%);
     color: white;
-    font-size: 18px;
+    font-size: 22px;
+    font-weight: bold;
     background: rgba(0,0,0,0.45);
     padding: 4px 8px;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
 }
 
@@ -143,10 +137,10 @@ button {
 .gallery-arrow-main-right { right: 6px; }
 
 .post-url {
-    padding: 6px 10px;
-    font-size: 10pt;
-    color: #9df;
+    padding: 10px 12px;
+    font-size: 12px;
     word-break: break-all;
+    color: #9df;
 }
 
 #scrollTopBtn {
@@ -154,9 +148,9 @@ button {
     bottom: 20px;
     left: 20px;
     background: #83f3df;
-    color: black;
+    color: #000;
+    border: none;
     padding: 8px 14px;
     border-radius: 40px;
-    font-size: 10pt;
-    z-index: 3000;
+    font-size: 14px;
 }
