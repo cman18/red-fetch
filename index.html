@@ -19,46 +19,45 @@
             right: 15px;
             background: rgba(150, 180, 255, 0.15);
             color: #b7d9ff;
-            padding: 8px 12px;  /* shrunk */
+            padding: 8px 12px;
             border-radius: 10px;
-            font-size: 10px;     /* 6pt → ~10px */
-            border: 1px solid rgba(180, 210, 255, 0.35);
+            font-size: 10px;
             line-height: 1.3;
+            border: 1px solid rgba(180, 210, 255, 0.35);
+            text-align: right;
         }
     </style>
 
-    <!-- Load CSS (cache-busted) -->
-    <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1.1.42">
+    <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1">
 </head>
 
 <body>
 
-    <!-- CLEAN TITLE (NO VERSION) -->
     <h1 id="titleHeader">Red Fetch</h1>
 
-    <!-- Version box (auto-updated by JS below) -->
     <div id="versionBox">
-        Index v1.1.42<br>
-        CSS v1.1.42<br>
-        JS v1.1.42
+        Index v1.1<br>
+        CSS v1.1<br>
+        JS v1.1
     </div>
 
+    <!-- TOP SEARCH BAR (restored layout, but search is half-width) -->
     <div class="top-bar">
 
-        <!-- u/ or r/ selector -->
         <select id="modeSelect" class="modeSelect">
             <option value="u">u/</option>
             <option value="r">r/</option>
         </select>
 
-        <!-- Input -->
+        <!-- Search bar HALF WIDTH -->
         <input id="input" class="input" type="text" placeholder="User ID or URL here">
 
-        <!-- Load button -->
-        <button id="loadBtn" class="loadBtn">Load Posts</button>
     </div>
 
+    <!-- BUTTON ROW (Load Posts moved here to left of Copy URL) -->
     <div class="button-row">
+
+        <button id="loadBtn" class="loadBtn">Load Posts</button>
         <button id="copyBtn">Copy URL</button>
         <button id="clearBtn">Clear</button>
 
@@ -75,21 +74,13 @@
 
     <button id="scrollTopBtn">Top</button>
 
-    <!-- JS (cache-busted) -->
-    <script id="mainJS" src="assets/app.js?v=1.1.42"></script>
+    <script id="mainJS" src="assets/app.js?v=1"></script>
 
-    <!-- Runtime anti-cache injection -->
     <script>
         (function() {
             const ts = Date.now();
-
-            const css = document.getElementById("mainCSS");
-            const js  = document.getElementById("mainJS");
-
-            css.href = "assets/main.css?v=" + ts;
-            js.src   = "assets/app.js?v=" + ts;
-
-            console.log("Cache bypass active:", ts);
+            document.getElementById("mainCSS").href = "assets/main.css?v=" + ts;
+            document.getElementById("mainJS").src   = "assets/app.js?v=" + ts;
         })();
     </script>
 
