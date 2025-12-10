@@ -13,12 +13,12 @@
     <style>
         #versionBox {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 12px;
+            right: 12px;
             background: rgba(150, 180, 255, 0.15);
             color: #b7d9ff;
-            padding: 10px 18px;
-            border-radius: 14px;
+            padding: 10px 14px;
+            border-radius: 10px;
             font-size: 10px;
             border: 1px solid rgba(180, 210, 255, 0.35);
             line-height: 1.3;
@@ -26,21 +26,21 @@
         }
     </style>
 
-    <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1.1.44">
+    <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1.1.50">
 </head>
 
 <body>
 
-    <h1 id="titleHeader">Red Fetch</h1>
+    <h1>Red Fetch</h1>
 
     <div id="versionBox">
-        Index v1.1.44<br>
-        CSS v1.1.44<br>
-        JS v1.1.44
+        Index v1.1.50<br>
+        CSS v1.1.50<br>
+        JS v1.1.50
     </div>
 
-    <!-- ROW 1 — dropdown + search + checkboxes -->
-    <div class="top-row">
+    <div class="top-bar">
+
         <select id="modeSelect" class="modeSelect">
             <option value="u">u/</option>
             <option value="r">r/</option>
@@ -48,16 +48,17 @@
 
         <input id="input" class="input" type="text" placeholder="User ID or URL here">
 
-        <div class="checkbox-group">
+        <button id="loadBtn" class="loadBtn">Load Posts</button>
+
+        <div class="checks">
             <label><input type="checkbox" id="imagesChk" checked> Images</label>
             <label><input type="checkbox" id="videosChk" checked> Videos</label>
             <label><input type="checkbox" id="otherChk" checked> Other</label>
         </div>
+
     </div>
 
-    <!-- ROW 2 — buttons -->
     <div class="button-row">
-        <button id="loadBtn">Load Posts</button>
         <button id="copyBtn">Copy URL</button>
         <button id="clearBtn">Clear</button>
         <button id="colToggleBtn">Columns: 3</button>
@@ -68,10 +69,10 @@
 
     <button id="scrollTopBtn">Top</button>
 
-    <script id="mainJS" src="assets/app.js?v=1.1.44"></script>
+    <script id="mainJS" src="assets/app.js?v=1.1.50"></script>
 
     <script>
-        (function() {
+        (() => {
             const ts = Date.now();
             document.getElementById("mainCSS").href = "assets/main.css?v=" + ts;
             document.getElementById("mainJS").src  = "assets/app.js?v=" + ts;
