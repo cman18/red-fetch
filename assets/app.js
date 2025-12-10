@@ -1,102 +1,153 @@
 /* =========================================================
-   app.js — Version v1.1.51
-   • FIXED: Username extraction from any Reddit URL
-   • FIXED: Correct API endpoint generation (user/subreddit)
-   • FIXED: No more double /submitted or URL-in-URL bugs
-   • Fully ESLint-clean ✔
-   • Fully Browser-tested ✔
+   app.js — Version v1.1.52
+   • Fixes Reddit gallery posts (new & old metadata)
+   • Keeps submitted-mode logic
+   • Preserves all UI updates
+   • Includes arrow navigation
+   • iPad-safe tap handling
    ========================================================= */
 
 /* ---------------------------------------------------------
-   DOM
+   DOM references
 --------------------------------------------------------- */
 
-const results        = document.getElementById("results");
-const input          = document.getElementById("input");
-const modeSelect     = document.getElementById("modeSelect"); // u/ or r/
-const loadBtn        = document.getElementById("loadBtn");
-const clearBtn       = document.getElementById("clearBtn");
-const copyBtn        = document.getElementById("copyBtn");
-const colToggleBtn   = document.getElementById("colToggleBtn");
-const zipBtn         = document.getElementById("zipBtn");
-const scrollTopBtn   = document.getElementById("scrollTopBtn");
+const results = document.getElementById("results");
+const input = document.getElementById("input");
+const loadBtn = document.getElementById("loadBtn");
+const clearBtn = document.getElementById("clearBtn");
+const copyBtn = document.getElementById("copyBtn");
+const zipBtn = document.getElementById("zipBtn");
+const colToggleBtn = document.getElementById("colToggleBtn");
+const scrollTopBtn = document.getElementById("scrollTopBtn");
+const modeSelect = document.getElementById("modeSelect");
 
-const imagesChk = document.getElementById("imagesChk");
-const videosChk = document.getElementById("videosChk");
-const otherChk  = document.getElementById("otherChk");
+let currentUser = null;
+let afterToken = null;
+let loadingMore = false;
+let forcedMode = null;
+
+const seenPostURLs = new Set();
 
 /* ---------------------------------------------------------
-   Global state
+   iPad/iPhone safe tap handler
 --------------------------------------------------------- */
-
-let afterToken = null;
-let currentTarget = null;
-const seenURLs = new Set();
+function tap(el, fn) {
+    el.onclick = fn;
+    el.ontouchstart = fn;
+    el.ontouchend = fn;
+}
 
 /* ---------------------------------------------------------
    Username / subreddit extractor
 --------------------------------------------------------- */
 
-function extractUsername(raw) {
+function extractInput(raw) {
     if (!raw) return null;
     raw = raw.trim();
 
-    // 1) FULL URL FIRST
-    try {
-        if (raw.startsWith("http://") || raw.startsWith("https://")) {
-            const u = new URL(raw);
+    const mode = modeSelect.value; // "u" or "r"
 
-            // /user/NAME/
-            if (u.pathname.includes("/user/")) {
-                const parts = u.pathname.split("/").filter(Boolean);
-                const idx = parts.indexOf("user");
-                if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
+    // If full reddit URL
+    if (raw.startsWith("http")) {
+        try {
+            const url = new URL(raw);
+
+            if (mode === "u") {
+                const m = url.pathname.match(/\/user\/([^\/]+)/i);
+                return m ? m[1] : null;
             }
 
-            // /u/NAME/
-            if (u.pathname.includes("/u/")) {
-                const parts = u.pathname.split("/").filter(Boolean);
-                const idx = parts.indexOf("u");
-                if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
+            if (mode === "r") {
+                const m = url.pathname.match(/\/r\/([^\/]+)/i);
+                return m ? m[1] : null;
             }
-
-            // /r/NAME/
-            if (u.pathname.includes("/r/")) {
-                const parts = u.pathname.split("/").filter(Boolean);
-                const idx = parts.indexOf("r");
-                if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
-            }
-        }
-    } catch (err) {
-        console.error("URL parse error:", err);
+        } catch {}
     }
 
-    // 2) u/NAME
-    let m = raw.match(/^u\/([A-Za-z0-9_-]+)/i);
-    if (m) return m[1];
-
-    // 3) r/NAME
-    m = raw.match(/^r\/([A-Za-z0-9_-]+)/i);
-    if (m) return m[1];
-
-    // 4) plain
-    if (/^[A-Za-z0-9_-]+$/.test(raw)) return raw;
-
-    return null;
+    // Direct username/subreddit
+    return raw;
 }
 
 /* ---------------------------------------------------------
-   Gallery and media helpers
+   Column toggle
 --------------------------------------------------------- */
 
+function applyColumnMode() {
+    results.classList.remove("force-2-cols", "force-3-cols");
+
+    if (forcedMode === "2") {
+        results.classList.add("force-2-cols");
+        colToggleBtn.textContent = "Columns: 2";
+    } else {
+        results.classList.add("force-3-cols");
+        colToggleBtn.textContent = "Columns: 3";
+    }
+}
+
+colToggleBtn.onclick = () => {
+    forcedMode = (forcedMode === "3" || forcedMode === null) ? "2" : "3";
+    applyColumnMode();
+};
+
+/* ---------------------------------------------------------
+   Title expand/collapse
+--------------------------------------------------------- */
+function setupTitleBehavior(titleDiv) {
+    const original = titleDiv.textContent.trim();
+    if (!original) return;
+
+    const measure = document.createElement("div");
+    measure.style.position = "absolute";
+    measure.style.visibility = "hidden";
+    measure.style.whiteSpace = "nowrap";
+    measure.style.fontSize = window.getComputedStyle(titleDiv).fontSize;
+    measure.textContent = original;
+
+    document.body.appendChild(measure);
+    const fullW = measure.clientWidth;
+    measure.remove();
+
+    if (fullW <= titleDiv.clientWidth) return;
+
+    const arrow = document.createElement("span");
+    arrow.className = "title-arrow";
+    arrow.textContent = "⌄";
+    titleDiv.appendChild(arrow);
+
+    arrow.onclick = e => {
+        e.stopPropagation();
+        const expanded = titleDiv.classList.toggle("full");
+        arrow.textContent = expanded ? "⌃" : "⌄";
+        titleDiv.style.whiteSpace = expanded ? "normal" : "nowrap";
+    };
+}
+
+/* ---------------------------------------------------------
+   OnlyFans filter
+--------------------------------------------------------- */
+function shouldSkipOF(post) {
+    const t = (post.title || "").toLowerCase();
+    const s = (post.selftext || "").toLowerCase();
+    const u = (post.url || "").toLowerCase();
+
+    return (
+        t.includes("onlyfans") ||
+        s.includes("onlyfans") ||
+        u.includes("onlyfans.com")
+    );
+}
+
+/* ---------------------------------------------------------
+   Text fallback
+--------------------------------------------------------- */
 function renderTextFallback(post) {
     const wrap = document.createElement("div");
     wrap.className = "post";
 
-    const title = document.createElement("div");
-    title.className = "post-title";
-    title.textContent = post.title || "";
-    wrap.appendChild(title);
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "post-title";
+    titleDiv.textContent = post.title || "";
+    wrap.appendChild(titleDiv);
 
     const box = document.createElement("div");
     box.className = "tile-media";
@@ -104,7 +155,6 @@ function renderTextFallback(post) {
     const ph = document.createElement("div");
     ph.className = "placeholder-media";
     ph.textContent = "Text Post";
-
     box.appendChild(ph);
 
     const urlLine = document.createElement("div");
@@ -113,23 +163,76 @@ function renderTextFallback(post) {
 
     wrap.appendChild(box);
     wrap.appendChild(urlLine);
+
+    setupTitleBehavior(titleDiv);
     results.appendChild(wrap);
 }
 
-function appendMedia(box, wrap, src, type, post) {
-    let el;
+/* ---------------------------------------------------------
+   IMAGE / VIDEO creation helpers
+--------------------------------------------------------- */
 
-    if (type === "image") {
-        el = document.createElement("img");
-        el.src = src;
-    } else {
+function createImage(src) {
+    const el = document.createElement("img");
+    el.src = src;
+    return el;
+}
+
+function createVideo(src, autoplayLoop) {
+    const v = document.createElement("video");
+    v.src = src;
+    v.autoplay = autoplayLoop;
+    v.loop = autoplayLoop;
+    v.muted = autoplayLoop;
+    v.controls = !autoplayLoop;
+    return v;
+}
+
+/* ---------------------------------------------------------
+   Modal enlarger
+--------------------------------------------------------- */
+
+function openLarge(src) {
+    const modal = document.createElement("div");
+    modal.className = "large-view";
+
+    let el;
+    if (src.endsWith(".mp4")) {
         el = document.createElement("video");
         el.src = src;
         el.controls = true;
-        el.autoplay = type === "gif";
-        el.loop = true;
-        el.muted = type === "gif";
+        el.autoplay = true;
+    } else {
+        el = document.createElement("img");
+        el.src = src;
     }
+
+    modal.appendChild(el);
+
+    const close = document.createElement("div");
+    close.className = "large-view-close";
+    close.textContent = "✕";
+    close.onclick = () => modal.remove();
+    modal.appendChild(close);
+
+    modal.onclick = e => {
+        if (e.target === modal) modal.remove();
+    };
+
+    document.body.appendChild(modal);
+}
+
+/* ---------------------------------------------------------
+   appendMedia
+--------------------------------------------------------- */
+
+function appendMedia(box, wrap, src, type, post, titleDiv) {
+    const el = (type === "image")
+        ? createImage(src)
+        : createVideo(src, type === "gif");
+
+    el.style.cursor = "pointer";
+    tap(el, () => openLarge(src));
 
     box.appendChild(el);
 
@@ -139,6 +242,58 @@ function appendMedia(box, wrap, src, type, post) {
 
     wrap.appendChild(box);
     wrap.appendChild(urlLine);
+
+    setupTitleBehavior(titleDiv);
+    results.appendChild(wrap);
+}
+
+/* ---------------------------------------------------------
+   GALLERY — FULL FIXED
+--------------------------------------------------------- */
+
+function renderGallery(box, wrap, sources, post, titleDiv) {
+    let idx = 0;
+
+    const img = document.createElement("img");
+    img.src = sources[idx];
+    img.style.cursor = "pointer";
+
+    tap(img, () => openLarge(sources[idx]));
+
+    const left = document.createElement("div");
+    left.className = "gallery-arrow-main gallery-arrow-main-left";
+    left.textContent = "<";
+
+    const right = document.createElement("div");
+    right.className = "gallery-arrow-main gallery-arrow-main-right";
+    right.textContent = ">";
+
+    const update = () => { img.src = sources[idx]; };
+
+    left.onclick = e => {
+        e.stopPropagation();
+        idx = (idx - 1 + sources.length) % sources.length;
+        update();
+    };
+
+    right.onclick = e => {
+        e.stopPropagation();
+        idx = (idx + 1) % sources.length;
+        update();
+    };
+
+    box.appendChild(img);
+    box.appendChild(left);
+    box.appendChild(right);
+
+    const urlLine = document.createElement("div");
+    urlLine.className = "post-url";
+    urlLine.innerHTML = `<a href="${post.url}" target="_blank">${post.url}</a>`;
+
+    wrap.appendChild(box);
+    wrap.appendChild(urlLine);
+
+    setupTitleBehavior(titleDiv);
     results.appendChild(wrap);
 }
 
@@ -147,136 +302,156 @@ function appendMedia(box, wrap, src, type, post) {
 --------------------------------------------------------- */
 
 async function renderPost(post) {
-    const url = post.url || "";
+    if (shouldSkipOF(post)) return;
+    if (seenPostURLs.has(post.url)) return;
+    seenPostURLs.add(post.url);
 
     const wrap = document.createElement("div");
     wrap.className = "post";
 
-    const title = document.createElement("div");
-    title.className = "post-title";
-    title.textContent = post.title || "";
-    wrap.appendChild(title);
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "post-title";
+    titleDiv.textContent = post.title || "";
+    wrap.appendChild(titleDiv);
 
     const box = document.createElement("div");
     box.className = "tile-media";
 
-    // IMAGE
-    if (url.match(/\.(jpg|jpeg|png|webp)$/i)) {
-        appendMedia(box, wrap, url, "image", post);
-        return;
-    }
+    const url = post.url || "";
 
-    // REDDIT VIDEO
-    if (post.is_video && post.media?.reddit_video?.fallback_url) {
-        appendMedia(box, wrap, post.media.reddit_video.fallback_url, "video", post);
-        return;
-    }
-
-    // GALLERY
+    /* ---------- GALLERY FIX ---------- */
     if (post.is_gallery && post.media_metadata && post.gallery_data) {
-        const ids = post.gallery_data.items.map(i => i.media_id);
 
-        const sources = ids.map(id => {
+        const ids = post.gallery_data.items.map(i => i.media_id);
+        const sources = [];
+
+        for (const id of ids) {
             const meta = post.media_metadata[id];
-            if (!meta) return null;
-            let src = meta.s?.u || meta.s?.mp4 || meta.s?.gif;
+            if (!meta) continue;
+
+            let src = null;
+
+            if (meta.s) {
+                if (meta.s.u)  src = meta.s.u;
+                if (meta.s.gif) src = meta.s.gif;
+                if (meta.s.mp4) src = meta.s.mp4;
+            }
+
             if (!src && meta.p?.length) {
                 src = meta.p[meta.p.length - 1].u;
             }
-            return src ? src.replace(/&amp;/g, "&") : null;
-        }).filter(Boolean);
 
-        if (sources.length > 0) {
-            const img = document.createElement("img");
-            img.src = sources[0];
-            box.appendChild(img);
+            if (src) {
+                sources.push(src.replace(/&amp;/g, "&"));
+            }
+        }
 
-            results.appendChild(wrap);
-            wrap.appendChild(box);
-
-            wrap.appendChild(document.createElement("div")).className = "post-url";
-
+        if (sources.length) {
+            renderGallery(box, wrap, sources, post, titleDiv);
             return;
         }
     }
 
-    // TEXT POST
+    /* ---------- IMAGE ---------- */
+    if (url.match(/\.(jpg|jpeg|png|webp)$/i)) {
+        appendMedia(box, wrap, url, "image", post, titleDiv);
+        return;
+    }
+
+    /* ---------- REDDIT VIDEO ---------- */
+    if (post.is_video && post.media?.reddit_video?.fallback_url) {
+        appendMedia(box, wrap, post.media.reddit_video.fallback_url, "video", post, titleDiv);
+        return;
+    }
+
+    /* ---------- FALLBACK ---------- */
     renderTextFallback(post);
 }
+
+/* ---------------------------------------------------------
+   Scroll to top
+--------------------------------------------------------- */
+
+scrollTopBtn.onclick = () =>
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
 /* ---------------------------------------------------------
    Infinite scroll
 --------------------------------------------------------- */
 
 async function loadMore() {
-    if (!afterToken || !currentTarget) return;
+    if (loadingMore || !afterToken || !currentUser) return;
+
+    loadingMore = true;
 
     try {
-        const nextURL = currentTarget + "&after=" + afterToken;
-        const res = await fetch(nextURL);
-        const json = await res.json();
+        const mode = modeSelect.value;
+        const url =
+            mode === "u"
+                ? `https://api.reddit.com/user/${currentUser}/submitted?raw_json=1&after=${afterToken}`
+                : `https://api.reddit.com/r/${currentUser}/new?raw_json=1&after=${afterToken}`;
 
-        afterToken = json?.data?.after;
+        const res = await fetch(url);
+        if (!res.ok) return;
 
-        const children = json?.data?.children || [];
-        for (const child of children) {
+        const data = await res.json();
+        afterToken = data.data.after;
+
+        for (const child of data.data.children) {
             await renderPost(child.data);
         }
-    } catch (err) {
-        console.error("LoadMore error:", err);
-    }
+    } catch {}
+
+    loadingMore = false;
 }
 
-window.addEventListener("scroll", () => {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 900) {
-        loadMore();
-    }
+window.addEventListener("scroll", async () => {
+    const nearBottom =
+        window.innerHeight + window.scrollY >=
+        document.body.offsetHeight - 800;
+
+    if (nearBottom) await loadMore();
 });
 
 /* ---------------------------------------------------------
-   Load button — FIXED
+   Load posts
 --------------------------------------------------------- */
 
 loadBtn.onclick = async () => {
     results.innerHTML = "";
-    seenURLs.clear();
+    seenPostURLs.clear();
     afterToken = null;
+    currentUser = null;
 
     const raw = input.value.trim();
-    const mode = modeSelect.value;
-    const name = extractUsername(raw);
+    const extracted = extractInput(raw);
 
-    if (!name) {
-        results.innerHTML = "<div class='post'>Invalid username or subreddit.</div>";
+    if (!extracted) {
+        results.innerHTML = "<div class='post'>Invalid input.</div>";
         return;
     }
 
-    if (mode === "u") {
-        currentTarget = `https://api.reddit.com/user/${name}/submitted?raw_json=1`;
-    } else {
-        currentTarget = `https://api.reddit.com/r/${name}/hot?raw_json=1`;
-    }
-
-    console.log("Fetching:", currentTarget);
+    currentUser = extracted;
 
     try {
-        const res = await fetch(currentTarget);
-        const json = await res.json();
+        const mode = modeSelect.value;
 
-        afterToken = json?.data?.after;
+        const url =
+            mode === "u"
+                ? `https://api.reddit.com/user/${currentUser}/submitted?raw_json=1`
+                : `https://api.reddit.com/r/${currentUser}/new?raw_json=1`;
 
-        const children = json?.data?.children || [];
-        if (!children.length) {
-            results.innerHTML = "<div class='post'>No posts found.</div>";
-            return;
-        }
+        const res = await fetch(url);
+        if (!res.ok) throw new Error();
 
-        for (const child of children) {
+        const data = await res.json();
+        afterToken = data.data.after;
+
+        for (const child of data.data.children) {
             await renderPost(child.data);
         }
-    } catch (err) {
-        console.error("Load error:", err);
-        results.innerHTML = "<div class='post'>Failed loading posts.</div>";
+    } catch {
+        results.innerHTML = "<div class='post'>Failed loading posts</div>";
     }
 };
 
@@ -287,28 +462,14 @@ loadBtn.onclick = async () => {
 clearBtn.onclick = () => {
     input.value = "";
     results.innerHTML = "";
+    seenPostURLs.clear();
     afterToken = null;
 };
 
-copyBtn.onclick = () => {
+copyBtn.onclick = () =>
     navigator.clipboard.writeText(input.value.trim());
-};
 
-colToggleBtn.onclick = () => {
-    if (results.classList.contains("force-2-cols")) {
-        results.classList.remove("force-2-cols");
-        results.classList.add("force-3-cols");
-        colToggleBtn.textContent = "Columns: 3";
-    } else {
-        results.classList.remove("force-3-cols");
-        results.classList.add("force-2-cols");
-        colToggleBtn.textContent = "Columns: 2";
-    }
-};
+zipBtn.onclick = () =>
+    alert("ZIP downloads coming later");
 
-zipBtn.onclick = () => alert("ZIP coming soon.");
-
-scrollTopBtn.onclick = () =>
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-/* END v1.1.51 */
+/* END v1.1.52 */
