@@ -11,7 +11,7 @@
 
     <title>Red Fetch</title>
 
-    <!-- Version Box -->
+    <!-- Horizontal Version Box -->
     <style>
         #versionBox {
             position: absolute;
@@ -19,14 +19,19 @@
             right: 15px;
             background: rgba(150, 180, 255, 0.15);
             color: #b7d9ff;
-            padding: 14px 22px;
+            padding: 10px 18px;
             border-radius: 14px;
             font-size: 10px;
             border: 1px solid rgba(180, 210, 255, 0.35);
             line-height: 1.4em;
+
+            display: flex;
+            flex-direction: row;
+            gap: 14px;
         }
     </style>
 
+    <!-- CSS -->
     <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1.1.50">
 </head>
 
@@ -34,27 +39,28 @@
 
     <h1 id="titleHeader">Red Fetch</h1>
 
-    <!-- Auto Version Box -->
+    <!-- Version Box Auto Updated -->
     <div id="versionBox">
-        Index v1.1.50<br>
-        CSS v1.1.50<br>
-        JS v1.1.50
+        <span>Index v1.1.50</span>
+        <span>CSS v1.1.50</span>
+        <span>JS v1.1.50</span>
     </div>
 
     <div class="top-bar">
-        <!-- u/ r/ selector -->
+
+        <!-- u/ or r/ selector -->
         <select id="modeSelect" class="modeSelect">
             <option value="u">u/</option>
             <option value="r">r/</option>
         </select>
 
-        <!-- Search box -->
+        <!-- Input -->
         <input id="input" class="input" type="text" placeholder="User ID or URL here">
 
         <!-- Load Posts -->
         <button id="loadBtn" class="loadBtn">Load Posts</button>
 
-        <!-- Checkboxes moved right of search bar -->
+        <!-- Filters -->
         <label><input type="checkbox" id="imagesChk" checked> Images</label>
         <label><input type="checkbox" id="videosChk" checked> Videos</label>
         <label><input type="checkbox" id="otherChk" checked> Other</label>
@@ -65,7 +71,9 @@
         <button id="clearBtn">Clear</button>
         <button id="colToggleBtn">Columns: 3</button>
         <button id="zipBtn">Download ZIP</button>
-        <button id="testBtn">Test Link</button>
+
+        <!-- Example Button -->
+        <button id="exampleBtn">Example</button>
     </div>
 
     <div id="results"></div>
@@ -75,14 +83,28 @@
     <!-- JS -->
     <script id="mainJS" src="assets/app.js?v=1.1.50"></script>
 
-    <!-- Runtime Anti-Cache -->
+    <!-- Runtime Cache Bypass -->
     <script>
         (function() {
             const ts = Date.now();
             document.getElementById("mainCSS").href = "assets/main.css?v=" + ts;
             document.getElementById("mainJS").src = "assets/app.js?v=" + ts;
-            console.log("Cache bypass:", ts);
         })();
+    </script>
+
+    <!-- Example Button Logic -->
+    <script>
+        document.getElementById("exampleBtn").onclick = () => {
+            const input = document.getElementById("input");
+            const mode = document.getElementById("modeSelect");
+            const load = document.getElementById("loadBtn");
+
+            mode.value = "u"; // ensure correct mode
+            input.value = "https://www.reddit.com/user/Euna_Chris/submitted/";
+
+            // Auto-trigger Load Posts
+            setTimeout(() => load.click(), 50);
+        };
     </script>
 
 </body>
