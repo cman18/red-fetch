@@ -2,77 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- NO-CACHE HEADERS -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 
     <title>Red Fetch</title>
 
-    <!-- Horizontal Version Box -->
+    <!-- VERSION BOX -->
     <style>
         #versionBox {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(150, 180, 255, 0.15);
-            color: #b7d9ff;
-            padding: 10px 18px;
-            border-radius: 14px;
+            top: 12px;
+            right: 12px;
+            background: rgba(150,180,255,0.10);
+            border: 1px solid rgba(180,210,255,0.25);
+            border-radius: 10px;
+            padding: 6px 10px;
             font-size: 10px;
-            border: 1px solid rgba(180, 210, 255, 0.35);
-            line-height: 1.4em;
-
+            color: #b7d9ff;
             display: flex;
-            flex-direction: row;
-            gap: 14px;
+            gap: 12px;
         }
+        #versionBox span { white-space: nowrap; }
     </style>
 
-    <!-- CSS -->
-    <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1.1.50">
+    <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1.2.0">
 </head>
 
 <body>
 
     <h1 id="titleHeader">Red Fetch</h1>
 
-    <!-- Version Box Auto Updated -->
     <div id="versionBox">
-        <span>Index v1.1.50</span>
-        <span>CSS v1.1.50</span>
-        <span>JS v1.1.50</span>
+        <span>Index v1.2.0</span>
+        <span>CSS v1.2.0</span>
+        <span>JS v1.2.0</span>
     </div>
 
+    <!-- TOP BAR -->
     <div class="top-bar">
 
-        <!-- u/ or r/ selector -->
         <select id="modeSelect" class="modeSelect">
             <option value="u">u/</option>
             <option value="r">r/</option>
         </select>
 
-        <!-- Input -->
-        <input id="input" class="input" type="text" placeholder="User ID or URL here">
+        <input id="input" class="input" type="text" placeholder="User or Subreddit">
 
-        <!-- Load Posts -->
         <button id="loadBtn" class="loadBtn">Load Posts</button>
 
-        <!-- Filters -->
+        <!-- Checkboxes moved beside input -->
         <label><input type="checkbox" id="imagesChk" checked> Images</label>
         <label><input type="checkbox" id="videosChk" checked> Videos</label>
         <label><input type="checkbox" id="otherChk" checked> Other</label>
+
     </div>
 
+    <!-- BUTTON ROW -->
     <div class="button-row">
         <button id="copyBtn">Copy URL</button>
         <button id="clearBtn">Clear</button>
         <button id="colToggleBtn">Columns: 3</button>
         <button id="zipBtn">Download ZIP</button>
 
-        <!-- Example Button -->
         <button id="exampleBtn">Example</button>
     </div>
 
@@ -80,31 +75,24 @@
 
     <button id="scrollTopBtn">Top</button>
 
-    <!-- JS -->
-    <script id="mainJS" src="assets/app.js?v=1.1.50"></script>
 
-    <!-- Runtime Cache Bypass -->
+    <!-- JS -->
+    <script id="mainJS" src="assets/app.js?v=1.2.0"></script>
+
+    <!-- Runtime cache bust -->
     <script>
         (function() {
             const ts = Date.now();
             document.getElementById("mainCSS").href = "assets/main.css?v=" + ts;
-            document.getElementById("mainJS").src = "assets/app.js?v=" + ts;
+            document.getElementById("mainJS").src  = "assets/app.js?v=" + ts;
+
+            // Example button auto-fill
+            const ex = document.getElementById("exampleBtn");
+            ex.onclick = () => {
+                input.value = "https://www.reddit.com/user/Euna_Chris/submitted/";
+                loadBtn.click();
+            };
         })();
-    </script>
-
-    <!-- Example Button Logic -->
-    <script>
-        document.getElementById("exampleBtn").onclick = () => {
-            const input = document.getElementById("input");
-            const mode = document.getElementById("modeSelect");
-            const load = document.getElementById("loadBtn");
-
-            mode.value = "u"; // ensure correct mode
-            input.value = "https://www.reddit.com/user/Euna_Chris/submitted/";
-
-            // Auto-trigger Load Posts
-            setTimeout(() => load.click(), 50);
-        };
     </script>
 
 </body>
