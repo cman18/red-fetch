@@ -1,9 +1,8 @@
 /* =========================================================
-   main.css — Version v1.2.0
-   • Restored compact UI
-   • Proper font sizing (header 20, controls 10–12)
-   • Checkboxes beside search bar
-   • No layout over-inflation
+   main.css — Version v1.2.1
+   Compact UI
+   Clean proportions matching your screenshot
+   Consistent small fonts
    ========================================================= */
 
 /* PAGE + HEADER */
@@ -17,7 +16,7 @@ body {
 
 h1 {
     font-size: 20px;
-    margin: 18px;
+    margin: 16px;
     color: #9ff;
 }
 
@@ -27,7 +26,7 @@ h1 {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 0 18px;
+    padding: 0 14px;
     flex-wrap: wrap;
 }
 
@@ -42,7 +41,7 @@ h1 {
     font-size: 12px;
     padding: 5px 8px;
     height: 28px;
-    min-width: 200px;
+    min-width: 220px;
     flex-grow: 1;
     border-radius: 6px;
     border: 1px solid #2b2d31;
@@ -52,12 +51,12 @@ h1 {
 
 .loadBtn {
     font-size: 12px;
+    padding: 4px 10px;
     height: 28px;
-    padding: 5px 10px;
     border-radius: 6px;
 }
 
-/* CHECKBOXES IN TOP BAR */
+/* FILTERS NEXT TO SEARCH BAR */
 
 .top-bar label {
     font-size: 12px;
@@ -72,7 +71,7 @@ h1 {
     display: flex;
     gap: 10px;
     align-items: center;
-    padding: 8px 18px;
+    padding: 8px 14px;
     flex-wrap: wrap;
 }
 
@@ -94,12 +93,13 @@ button {
     grid-template-columns: repeat(3, 1fr);
     gap: 14px;
     width: 96%;
-    margin: 18px auto 60px auto;
+    margin: 16px auto 60px auto;
 }
 
 .force-2-cols {
     grid-template-columns: repeat(2, 1fr) !important;
 }
+
 .force-3-cols {
     grid-template-columns: repeat(3, 1fr) !important;
 }
@@ -116,8 +116,8 @@ button {
 
 .post-title {
     font-size: 12px;
-    color: #eee;
     padding: 6px 10px;
+    color: #eee;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -153,8 +153,13 @@ button {
     cursor: pointer;
 }
 
-.gallery-arrow-main-left  { left: 6px; }
-.gallery-arrow-main-right { right: 6px; }
+.gallery-arrow-main-left {
+    left: 6px;
+}
+
+.gallery-arrow-main-right {
+    right: 6px;
+}
 
 /* URL LINE */
 
@@ -163,7 +168,10 @@ button {
     padding: 6px 10px;
     color: #9df;
 }
-.post-url a { color: #9df; }
+
+.post-url a {
+    color: #9df;
+}
 
 /* MODAL VIEW */
 
@@ -187,9 +195,9 @@ button {
 
 .large-view-close {
     position: absolute;
-    top: 18px;
+    top: 16px;
     right: 22px;
-    font-size: 26px;
+    font-size: 28px;
     cursor: pointer;
     color: white;
 }
