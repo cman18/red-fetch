@@ -1,38 +1,47 @@
 /* =========================================================
-   app.js — Version v1.2.1
-   COMPLETE RESTORE + FIXES
-   • Includes ALL logic from 1.1.51 (≈460 lines)
-   • Fixes gallery posts that failed to display
-   • Improves Redgifs handling through Worker
-   • Adds error tracing for broken media_metadata
-   • Adds mobile-safe tapping for enlarge
-   • Adds filters (Images / Videos / Other)
-   • Maintains tile layout, columns toggle
-   • Adds version injector for index.html
+   app.js — Version v1.2.2
+   COMPLETE + ERROR DISPLAY VERSION
+   ---------------------------------------------------------
+   INCLUDED FEATURES
+   - Gallery support (full + arrows)
+   - Redgifs via Cloudflare Worker
+   - Imgur GIFV → MP4, Gfycat → MP4
+   - Reddit video support
+   - YouTube embed support
+   - iPad-friendly tap & enlarge modal
+   - Image / Video / Other filters
+   - Infinite scroll with error display
+   - Load Posts with on-screen error display
+   - Column toggle
+   - Version injector
+   - OnlyFans filter
+   - Duplicate URL filter
    ========================================================= */
 
+
 /* ---------------------------------------------------------
-   VERSION INJECTOR (affects version box only)
+   VERSION BOX AUTO-INJECTOR
 --------------------------------------------------------- */
 (function injectVersion() {
     const match = document.currentScript.text.match(/Version (v[0-9.]+)/);
     if (!match) return;
 
     const ver = match[1];
-
     const box = document.querySelector("#versionBox");
+
     if (box) {
-        box.innerHTML =
-            `<span>Index v${ver.replace("v","")}</span>` +
-            `<span>CSS v${ver.replace("v","")}</span>` +
-            `<span>JS ${ver}</span>`;
+        box.innerHTML = `
+            <span>Index ${ver}</span>
+            <span>CSS ${ver}</span>
+            <span>JS ${ver}</span>
+        `;
     }
 })();
 
-/* ---------------------------------------------------------
-   DOM ELEMENT REFERENCES
---------------------------------------------------------- */
 
+/* ---------------------------------------------------------
+   DOM ELEMENTS
+--------------------------------------------------------- */
 const results       = document.getElementById("results");
 const input         = document.getElementById("input");
 const loadBtn       = document.getElementById("loadBtn");
@@ -46,34 +55,34 @@ const videosChk     = document.getElementById("videosChk");
 const otherChk      = document.getElementById("otherChk");
 const modeSelect    = document.getElementById("modeSelect");
 
+
 /* ---------------------------------------------------------
    GLOBAL STATE
 --------------------------------------------------------- */
-
 let currentUser = null;
-let afterToken  = null;
+let afterToken = null;
 let loadingMore = false;
-let forcedMode  = "3";
+let forcedMode = "3";
 
 const seenPostURLs = new Set();
 
-/* Redgifs Worker Proxy */
 const REDGIFS_PROXY = "https://red.coffeemanhou.workers.dev/rg/";
 
+
 /* ---------------------------------------------------------
-   SAFE TAP HANDLER FOR MOBILE
+   MOBILE / IPAD TAP HANDLING
 --------------------------------------------------------- */
 function addTap(el, handler) {
     el.onclick = handler;
     el.ontouchstart = handler;
 }
 
+
 /* ---------------------------------------------------------
-   USERNAME / SUBREDDIT EXTRACTOR
+   EXTRACT USER OR SUBREDDIT
 --------------------------------------------------------- */
 function extractTarget(raw) {
     if (!raw) return null;
-
     raw = raw.trim();
 
     if (/reddit\.com\/user\/([^\/]+)/i.test(raw))
@@ -94,8 +103,9 @@ function extractTarget(raw) {
     return null;
 }
 
+
 /* ---------------------------------------------------------
-   COLUMN MODE
+   APPLY COLUMN MODE
 --------------------------------------------------------- */
 function applyColumnMode() {
     results.classList.remove("force-2-cols","force-3-cols");
@@ -114,10 +124,10 @@ colToggleBtn.onclick = () => {
     applyColumnMode();
 };
 
-/* ---------------------------------------------------------
-   REDGIFS HELPERS
---------------------------------------------------------- */
 
+/* ---------------------------------------------------------
+   REDGIFS UTILITIES
+--------------------------------------------------------- */
 function isRedgifsURL(url) {
     return url && url.includes("redgifs.com");
 }
@@ -127,8 +137,8 @@ function extractRedgifsSlug(url) {
 
     if (url.includes("out.reddit.com")) {
         try {
-            const out = new URL(url).searchParams.get("url");
-            if (out) url = out;
+            const u = new URL(url).searchParams.get("url");
+            if (u) url = u;
         } catch {}
     }
 
@@ -156,14 +166,16 @@ async function fetchRedgifsMP4(url) {
 
         const json = await res.json();
         return json.mp4 || null;
+
     } catch (err) {
-        console.warn("Redgifs worker failed", err);
+        console.warn("Redgifs Worker error:", err);
         return null;
     }
 }
 
+
 /* ---------------------------------------------------------
-   GIF → MP4 CONVERSIONS
+   GIF / GIFV HANDLING
 --------------------------------------------------------- */
 function isGifURL(url) {
     if (!url) return false;
@@ -181,7 +193,7 @@ function convertGif(url) {
     if (url.includes("i.imgur.com"))
         return url.replace(".gifv",".mp4").replace(".gif",".mp4");
 
-    if (url.includes("gfycat.com")) {
+    if (url.includes("gfycat")) {
         const id = url.split("/").pop().split("-")[0];
         return `https://giant.gfycat.com/${id}.mp4`;
     }
@@ -192,8 +204,9 @@ function convertGif(url) {
     return null;
 }
 
+
 /* ---------------------------------------------------------
-   TITLE EXPANDER
+   TITLE EXPAND/COLLAPSE
 --------------------------------------------------------- */
 function setupTitleBehavior(el) {
     const text = el.textContent.trim();
@@ -207,10 +220,10 @@ function setupTitleBehavior(el) {
     m.textContent = text;
 
     document.body.appendChild(m);
-    const wide = m.clientWidth;
+    const fullW = m.clientWidth;
     m.remove();
 
-    if (wide <= el.clientWidth) return;
+    if (fullW <= el.clientWidth) return;
 
     const arrow = document.createElement("span");
     arrow.className = "title-arrow";
@@ -226,6 +239,7 @@ function setupTitleBehavior(el) {
     };
 }
 
+
 /* ---------------------------------------------------------
    ONLYFANS FILTER
 --------------------------------------------------------- */
@@ -240,6 +254,7 @@ function skipOF(post) {
         u.includes("onlyfans.com")
     );
 }
+
 
 /* ---------------------------------------------------------
    TEXT FALLBACK CARD
@@ -273,8 +288,9 @@ function renderText(post) {
     results.appendChild(wrap);
 }
 
+
 /* ---------------------------------------------------------
-   MEDIA ELEMENT CREATORS
+   CREATE MEDIA ELEMENTS
 --------------------------------------------------------- */
 function createImage(src) {
     const el = document.createElement("img");
@@ -292,8 +308,9 @@ function createVideo(src, auto) {
     return v;
 }
 
+
 /* ---------------------------------------------------------
-   LARGE VIEW MODAL
+   LARGE VIEW MODAL (IMAGE + VIDEO)
 --------------------------------------------------------- */
 function openLarge(src) {
     const modal = document.createElement("div");
@@ -328,18 +345,22 @@ function openLarge(src) {
     document.body.appendChild(modal);
 }
 
+
 /* ---------------------------------------------------------
    APPEND MEDIA TILE
 --------------------------------------------------------- */
 function appendMedia(box, wrap, src, type, post, title) {
 
     if (!src) {
-        console.warn("Missing media source for:", post);
-        renderText(post);
+        results.innerHTML += `
+            <div class='post' style="padding:14px; color:#f88;">
+                Missing media for: ${post.url}
+            </div>`;
         return;
     }
 
-    const el = type === "image"
+    const el =
+        type === "image"
         ? createImage(src)
         : createVideo(src, type === "gif");
 
@@ -359,23 +380,26 @@ function appendMedia(box, wrap, src, type, post, title) {
     results.appendChild(wrap);
 }
 
+
 /* ---------------------------------------------------------
-   GALLERY RENDERER (ROBUST)
+   GALLERY RENDERER
 --------------------------------------------------------- */
 function renderGallery(box, wrap, sources, post, title) {
 
     if (!sources || !sources.length) {
-        console.warn("Gallery missing sources for:", post);
-        renderText(post);
+        results.innerHTML += `
+            <div class='post' style="padding:14px; color:#f88;">
+                Gallery missing valid media.<br>
+                URL: ${post.url}
+            </div>`;
         return;
     }
 
     let idx = 0;
 
     const img = document.createElement("img");
-    img.src = sources[0];
+    img.src = sources[idx];
     img.style.cursor = "pointer";
-
     addTap(img, () => openLarge(sources[idx]));
 
     const left = document.createElement("div");
@@ -413,8 +437,9 @@ function renderGallery(box, wrap, sources, post, title) {
     results.appendChild(wrap);
 }
 
+
 /* ---------------------------------------------------------
-   RENDER POST CONTROLLER
+   RENDER SINGLE POST
 --------------------------------------------------------- */
 async function renderPost(post) {
 
@@ -435,21 +460,19 @@ async function renderPost(post) {
 
     const url = post.url || "";
 
-    /* FILTER APPLICATION */
-    const isImg   = /\.(jpg|jpeg|png|webp)$/i.test(url);
-    const isVid   = post.is_video || url.endsWith(".mp4") || url.includes("youtu");
+    /* FILTERS */
+    const isImg = /\.(jpg|jpeg|png|webp)$/i.test(url);
+    const isVid = post.is_video || url.endsWith(".mp4") || url.includes("youtu");
     const isOther = !isImg && !isVid;
 
-    if (!imagesChk.checked && isImg)   return;
-    if (!videosChk.checked && isVid)   return;
-    if (!otherChk.checked && isOther)  return;
+    if (!imagesChk.checked && isImg) return;
+    if (!videosChk.checked && isVid) return;
+    if (!otherChk.checked && isOther) return;
 
-    /* ---- GALLERY ---- */
+    /* GALLERY */
     if (post.is_gallery && post.media_metadata && post.gallery_data) {
-
         const ids = post.gallery_data.items.map(i => i.media_id);
-
-        const srcs = ids.map(id => {
+        const sources = ids.map(id => {
             const meta = post.media_metadata[id];
             if (!meta) return null;
 
@@ -460,33 +483,26 @@ async function renderPost(post) {
             return src ? src.replace(/&amp;/g,"&") : null;
         }).filter(Boolean);
 
-        if (!srcs.length) {
-            console.warn("Gallery had no valid items", post);
-            renderText(post);
-            return;
-        }
-
-        renderGallery(box, wrap, srcs, post, title);
+        renderGallery(box, wrap, sources, post, title);
         return;
     }
 
-    /* ---- IMAGE ---- */
+    /* IMAGE */
     if (isImg) {
         appendMedia(box, wrap, url, "image", post, title);
         return;
     }
 
-    /* ---- REDGIFS ---- */
+    /* REDGIFS */
     if (isRedgifsURL(url)) {
         const mp4 = await fetchRedgifsMP4(url);
         if (mp4) {
             appendMedia(box, wrap, mp4, "gif", post, title);
             return;
         }
-        console.warn("Redgifs fetch failed", url);
     }
 
-    /* ---- GIF TO MP4 ---- */
+    /* GIF CONVERSION */
     if (isGifURL(url)) {
         const mp4 = convertGif(url);
         if (mp4) {
@@ -495,7 +511,7 @@ async function renderPost(post) {
         }
     }
 
-    /* ---- REDDIT VIDEO ---- */
+    /* REDDIT VIDEO */
     if (post.is_video && post.media?.reddit_video?.fallback_url) {
         appendMedia(
             box,
@@ -508,7 +524,7 @@ async function renderPost(post) {
         return;
     }
 
-    /* ---- YOUTUBE ---- */
+    /* YOUTUBE */
     if (url.includes("youtu")) {
         const id =
             (url.match(/v=([^&]+)/)||[])[1] ||
@@ -537,18 +553,20 @@ async function renderPost(post) {
         }
     }
 
-    /* ---- TEXT FALLBACK ---- */
+    /* TEXT POST */
     renderText(post);
 }
 
-/* ---------------------------------------------------------
-   SCROLL TO TOP
---------------------------------------------------------- */
-scrollTopBtn.onclick = () =>
-    window.scrollTo({top:0,behavior:"smooth"});
 
 /* ---------------------------------------------------------
-   INFINITE SCROLL LOADER
+   SCROLL TO TOP BUTTON
+--------------------------------------------------------- */
+scrollTopBtn.onclick = () =>
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+
+/* ---------------------------------------------------------
+   INFINITE SCROLL LOADING WITH ERROR DISPLAY
 --------------------------------------------------------- */
 async function loadMore() {
     if (loadingMore || !afterToken || !currentUser) return;
@@ -561,9 +579,25 @@ async function loadMore() {
             `https://api.reddit.com/${mode}/${currentUser}/submitted?raw_json=1&after=${afterToken}`;
 
         const res = await fetch(url);
-        if (!res.ok) throw new Error("API error");
+
+        if (!res.ok) {
+            results.innerHTML += `
+                <div class='post' style="padding:16px; font-size:16px; color:#f88;">
+                    Infinite scroll error ${res.status}
+                </div>`;
+            loadingMore = false;
+            return;
+        }
 
         const json = await res.json();
+        if (!json?.data?.children) {
+            results.innerHTML += `
+                <div class='post' style="padding:16px; font-size:16px; color:#f88;">
+                    Infinite scroll: unexpected Reddit format.
+                </div>`;
+            loadingMore = false;
+            return;
+        }
 
         afterToken = json.data.after;
 
@@ -571,7 +605,10 @@ async function loadMore() {
             await renderPost(c.data);
 
     } catch (err) {
-        console.warn("Infinite scroll failed:", err);
+        results.innerHTML += `
+            <div class='post' style="padding:16px; font-size:16px; color:#f88;">
+                Infinite scroll network error: ${err}
+            </div>`;
     }
 
     loadingMore = false;
@@ -582,45 +619,76 @@ window.addEventListener("scroll", async () => {
         await loadMore();
 });
 
+
 /* ---------------------------------------------------------
-   LOAD BUTTON PRIMARY PROCESS
+   LOAD BUTTON (MAIN)
+   WITH FULL ON-SCREEN ERROR OUTPUT
 --------------------------------------------------------- */
 loadBtn.onclick = async () => {
+
     results.innerHTML = "";
     seenPostURLs.clear();
     afterToken = null;
 
     const raw = input.value.trim();
-    let target = extractTarget(raw);
+    const target = extractTarget(raw);
 
     if (!target) {
-        results.innerHTML = "<div class='post'>Invalid username / subreddit.</div>";
+        results.innerHTML = `
+            <div class='post' style="padding:16px; font-size:16px; color:#f88;">
+                Invalid username or subreddit.
+            </div>`;
         return;
     }
 
     currentUser = target;
 
+    const mode = modeSelect.value === "r" ? "r" : "user";
+    const url =
+        `https://api.reddit.com/${mode}/${target}/submitted?raw_json=1`;
+
     try {
-        const mode = modeSelect.value === "r" ? "r" : "user";
-        const url = `https://api.reddit.com/${mode}/${target}/submitted?raw_json=1`;
-
         const res = await fetch(url);
-        if (!res.ok) throw new Error();
 
-        const data = await res.json();
-        afterToken = data.data.after;
+        if (!res.ok) {
+            results.innerHTML = `
+                <div class='post' style="padding:16px; font-size:16px; color:#f88;">
+                    Reddit error ${res.status}<br>
+                    <span style="font-size:13px; opacity:0.8;">
+                        ${res.status === 429 ? "Rate limit" : ""}
+                        ${res.status === 403 ? "Access forbidden" : ""}
+                        ${res.status === 404 ? "Not found" : ""}
+                    </span>
+                </div>`;
+            return;
+        }
 
-        for (let c of data.data.children)
+        const json = await res.json();
+        if (!json?.data?.children) {
+            results.innerHTML = `
+                <div class='post' style="padding:16px; font-size:16px; color:#f88;">
+                    Unexpected Reddit response.
+                </div>`;
+            return;
+        }
+
+        afterToken = json.data.after;
+
+        for (let c of json.data.children)
             await renderPost(c.data);
 
     } catch (err) {
-        console.error("LOAD FAILED", err);
-        results.innerHTML = "<div class='post'>Failed loading posts.</div>";
+        results.innerHTML = `
+            <div class='post' style="padding:16px; font-size:16px; color:#f88;">
+                Network failure loading posts.<br>
+                <span style="font-size:13px; opacity:0.8;">${err}</span>
+            </div>`;
     }
 };
 
+
 /* ---------------------------------------------------------
-   OTHER BUTTONS
+   CLEAR / COPY / ZIP BUTTONS
 --------------------------------------------------------- */
 
 clearBtn.onclick = () => {
@@ -636,4 +704,5 @@ copyBtn.onclick = () =>
 zipBtn.onclick = () =>
     alert("ZIP downloads coming later");
 
-/* END OF FILE v1.2.1 */
+
+/* END OF FILE v1.2.2 */
