@@ -1,6 +1,6 @@
 /* =========================================================
-   app.js — Version v1.2.2
-   COMPLETE + ERROR DISPLAY VERSION
+   app.js — Version v1.2.3
+   COMPLETE + SAFE-TAP ENLARGE FIX
    ---------------------------------------------------------
    INCLUDED FEATURES
    - Gallery support (full + arrows)
@@ -8,7 +8,7 @@
    - Imgur GIFV → MP4, Gfycat → MP4
    - Reddit video support
    - YouTube embed support
-   - iPad-friendly tap & enlarge modal
+   - iPad-friendly SAFE TAP enlarge modal
    - Image / Video / Other filters
    - Infinite scroll with error display
    - Load Posts with on-screen error display
@@ -70,11 +70,28 @@ const REDGIFS_PROXY = "https://red.coffeemanhou.workers.dev/rg/";
 
 
 /* ---------------------------------------------------------
-   MOBILE / IPAD TAP HANDLING
+   SAFE-TAP HANDLER (prevents accidental enlarge)
 --------------------------------------------------------- */
-function addTap(el, handler) {
-    el.onclick = handler;
-    el.ontouchstart = handler;
+function addSafeTap(el, handler) {
+    el.onclick = (ev) => {
+        const rect = el.getBoundingClientRect();
+        const x = ev.clientX - rect.left;
+        const safeLeft = rect.width * 0.20;
+        const safeRight = rect.width * 0.80;
+
+        // Only open if tap is in the middle 60 percent
+        if (x >= safeLeft && x <= safeRight) handler();
+    };
+
+    el.ontouchend = (ev) => {
+        const touch = ev.changedTouches[0];
+        const rect = el.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const safeLeft = rect.width * 0.20;
+        const safeRight = rect.width * 0.80;
+
+        if (x >= safeLeft && x <= safeRight) handler();
+    };
 }
 
 
@@ -123,8 +140,6 @@ colToggleBtn.onclick = () => {
     forcedMode = forcedMode === "3" ? "2" : "3";
     applyColumnMode();
 };
-
-
 /* ---------------------------------------------------------
    REDGIFS UTILITIES
 --------------------------------------------------------- */
@@ -268,7 +283,7 @@ function renderText(post) {
     title.textContent = post.title || "";
     wrap.appendChild(title);
 
-    const box = document.createElement("div");
+    const box = document.create.createElement("div");
     box.className = "tile-media";
 
     const ph = document.createElement("div");
@@ -307,8 +322,6 @@ function createVideo(src, auto) {
     v.controls = !auto;
     return v;
 }
-
-
 /* ---------------------------------------------------------
    LARGE VIEW MODAL (IMAGE + VIDEO)
 --------------------------------------------------------- */
@@ -335,7 +348,7 @@ function openLarge(src) {
     close.className = "large-view-close";
     close.textContent = "✕";
 
-    addTap(close, () => modal.remove());
+    addSafeTap(close, () => modal.remove());
     modal.appendChild(close);
 
     modal.onclick = (e) => {
@@ -347,7 +360,7 @@ function openLarge(src) {
 
 
 /* ---------------------------------------------------------
-   APPEND MEDIA TILE
+   APPEND MEDIA TILE (image / video / gif)
 --------------------------------------------------------- */
 function appendMedia(box, wrap, src, type, post, title) {
 
@@ -365,7 +378,9 @@ function appendMedia(box, wrap, src, type, post, title) {
         : createVideo(src, type === "gif");
 
     el.style.cursor = "pointer";
-    addTap(el, () => openLarge(src));
+
+    // SAFE TAP enlarge
+    addSafeTap(el, () => openLarge(src));
 
     box.appendChild(el);
 
@@ -400,7 +415,9 @@ function renderGallery(box, wrap, sources, post, title) {
     const img = document.createElement("img");
     img.src = sources[idx];
     img.style.cursor = "pointer";
-    addTap(img, () => openLarge(sources[idx]));
+
+    // Safe tap enlarge
+    addSafeTap(img, () => openLarge(sources[idx]));
 
     const left = document.createElement("div");
     left.className = "gallery-arrow-main gallery-arrow-main-left";
@@ -471,12 +488,14 @@ async function renderPost(post) {
 
     /* GALLERY */
     if (post.is_gallery && post.media_metadata && post.gallery_data) {
+
         const ids = post.gallery_data.items.map(i => i.media_id);
+
         const sources = ids.map(id => {
             const meta = post.media_metadata[id];
             if (!meta) return null;
 
-            let src = meta.s?.u || meta.s?.gif || meta.s?.mp4;
+            let src = meta.s?.u || meta.s?.mp4 || meta.s?.gif;
             if (!src && meta.p?.length)
                 src = meta.p[meta.p.length - 1].u;
 
@@ -556,8 +575,6 @@ async function renderPost(post) {
     /* TEXT POST */
     renderText(post);
 }
-
-
 /* ---------------------------------------------------------
    SCROLL TO TOP BUTTON
 --------------------------------------------------------- */
@@ -566,7 +583,7 @@ scrollTopBtn.onclick = () =>
 
 
 /* ---------------------------------------------------------
-   INFINITE SCROLL LOADING WITH ERROR DISPLAY
+   INFINITE SCROLL LOADING WITH ON-SCREEN ERRORS
 --------------------------------------------------------- */
 async function loadMore() {
     if (loadingMore || !afterToken || !currentUser) return;
@@ -593,7 +610,7 @@ async function loadMore() {
         if (!json?.data?.children) {
             results.innerHTML += `
                 <div class='post' style="padding:16px; font-size:16px; color:#f88;">
-                    Infinite scroll: unexpected Reddit format.
+                    Infinite scroll: unexpected Reddit response.
                 </div>`;
             loadingMore = false;
             return;
@@ -607,7 +624,8 @@ async function loadMore() {
     } catch (err) {
         results.innerHTML += `
             <div class='post' style="padding:16px; font-size:16px; color:#f88;">
-                Infinite scroll network error: ${err}
+                Infinite scroll network error:<br>
+                <span style="font-size:13px; opacity:0.8;">${err}</span>
             </div>`;
     }
 
@@ -621,8 +639,7 @@ window.addEventListener("scroll", async () => {
 
 
 /* ---------------------------------------------------------
-   LOAD BUTTON (MAIN)
-   WITH FULL ON-SCREEN ERROR OUTPUT
+   LOAD POSTS BUTTON — FULL ERROR OUTPUT
 --------------------------------------------------------- */
 loadBtn.onclick = async () => {
 
@@ -655,8 +672,8 @@ loadBtn.onclick = async () => {
                 <div class='post' style="padding:16px; font-size:16px; color:#f88;">
                     Reddit error ${res.status}<br>
                     <span style="font-size:13px; opacity:0.8;">
-                        ${res.status === 429 ? "Rate limit" : ""}
-                        ${res.status === 403 ? "Access forbidden" : ""}
+                        ${res.status === 429 ? "Rate limited" : ""}
+                        ${res.status === 403 ? "Forbidden" : ""}
                         ${res.status === 404 ? "Not found" : ""}
                     </span>
                 </div>`;
@@ -690,7 +707,6 @@ loadBtn.onclick = async () => {
 /* ---------------------------------------------------------
    CLEAR / COPY / ZIP BUTTONS
 --------------------------------------------------------- */
-
 clearBtn.onclick = () => {
     input.value = "";
     results.innerHTML = "";
@@ -705,4 +721,4 @@ zipBtn.onclick = () =>
     alert("ZIP downloads coming later");
 
 
-/* END OF FILE v1.2.2 */
+/* END OF FILE v1.2.3 */
