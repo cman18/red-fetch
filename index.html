@@ -1,70 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+  <title>Red Fetch</title>
 
-    <title>Red Fetch</title>
+  <!-- Cache-bust -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
 
-    <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1.2.5">
+  <link rel="stylesheet" href="assets/main.css?v=1.2.5" />
 </head>
 
 <body>
 
-    <h1 id="titleHeader">Red Fetch</h1>
+  <h1 class="title">Red Fetch</h1>
 
-    <!-- VERSION BOX — unchanged -->
-    <div id="versionBox"></div>
+  <!-- VERSION BOX -->
+  <div id="versionBox">Index v1.2.5 • CSS v1.2.5 • JS v1.2.5</div>
 
-    <!-- ROW 1 -->
-    <div class="row row1">
-        <select id="modeSelect" class="modeSelect">
-            <option value="u">u/</option>
-            <option value="r">r/</option>
-        </select>
+  <!-- ROW 1 -->
+  <div class="row row-top">
+      <select id="modeSelect" class="dropdown">
+          <option value="u">u/</option>
+          <option value="r">r/</option>
+      </select>
 
-        <input id="input" class="input" type="text" placeholder="User ID or URL here">
+      <input id="input" type="text" class="searchBox" placeholder="User ID or URL here">
 
-        <div class="checkboxes">
-            <label><input type="checkbox" id="imagesChk" checked> Images</label>
-            <label><input type="checkbox" id="videosChk" checked> Videos</label>
-            <label><input type="checkbox" id="otherChk" checked> Other</label>
-        </div>
-    </div>
+      <div class="checks">
+          <label><input type="checkbox" id="imagesChk" checked> Images</label>
+          <label><input type="checkbox" id="videosChk" checked> Videos</label>
+          <label><input type="checkbox" id="otherChk" checked> Other</label>
+      </div>
+  </div>
 
-    <!-- ROW 2 -->
-    <div class="row row2">
-        <button id="loadBtn">Load Posts</button>
-        <button id="copyBtn">Copy URL</button>
-        <button id="clearBtn">Clear</button>
-        <button id="colToggleBtn">Columns: 3</button>
-        <button id="zipBtn">Download ZIP</button>
-        <button id="exampleBtn">Example</button>
-    </div>
+  <!-- ROW 2 -->
+  <div class="row row-buttons">
 
-    <div id="results"></div>
+      <button id="loadBtn" class="btn silver">Load Posts</button>
 
-    <button id="scrollTopBtn">Top</button>
+      <button id="copyBtn" class="btn">Copy URL</button>
+      <button id="clearBtn" class="btn">Clear</button>
+      <button id="colToggleBtn" class="btn">Columns: 3</button>
+      <button id="zipBtn" class="btn">Download ZIP</button>
+      <button id="exampleBtn" class="btn">Example</button>
+  </div>
 
-    <!-- JS -->
-    <script id="mainJS" src="assets/app.js?v=1.2.5"></script>
+  <!-- RESULTS -->
+  <div id="results"></div>
 
-    <!-- Runtime anti-cache -->
-    <script>
-        const ts = Date.now();
-        document.getElementById("mainCSS").href = "assets/main.css?v=" + ts;
-        document.getElementById("mainJS").src  = "assets/app.js?v=" + ts;
+  <button id="scrollTopBtn" class="scrollTopBtn">Top</button>
 
-        document.getElementById("exampleBtn").onclick = () => {
-            document.getElementById("input").value =
-                "https://www.reddit.com/user/Euna_Chris/submitted/";
-            document.getElementById("loadBtn").click();
-        };
-    </script>
+  <script src="assets/app.js?v=1.2.5"></script>
+
+  <script>
+      // Example button auto-fill
+      document.getElementById("exampleBtn").onclick = () => {
+          document.getElementById("input").value =
+              "https://www.reddit.com/user/Euna_Chris/submitted/";
+          document.getElementById("loadBtn").click();
+      };
+  </script>
 
 </body>
 </html>
