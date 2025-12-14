@@ -1,7 +1,7 @@
 /* =========================================================
    main.css — Version v1.2.7
-   EXACT UI SHRINK (20 percent smaller, no layout changes)
-   Matches screenshot layout exactly, only scaled down.
+   Global UI size reduction by ~20%
+   No structural or layout changes
    ========================================================= */
 
 /* PAGE + HEADER */
@@ -13,109 +13,121 @@ body {
 }
 
 h1 {
-    font-size: 32px; /* was 40 */
-    margin: 16px 16px 6px 16px;
+    font-size: 28px;      /* was 35 */
+    margin: 14px 20px;
     color: #9ff;
 }
 
-/* VERSION BOX (unchanged layout, just smaller) */
+/* VERSION BOX TOP-RIGHT */
 #versionBox {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(150,180,255,0.15);
+    top: 12px;
+    right: 12px;
+    background: rgba(150, 180, 255, 0.15);
+    border: 1px solid rgba(180, 210, 255, 0.35);
     color: #b7d9ff;
-    padding: 6px 12px;
-    font-size: 10px; /* was 12 */
+    padding: 6px 10px;     /* reduced */
     border-radius: 10px;
-    border: 1px solid rgba(180,210,255,0.3);
+    font-size: 10px;       /* small as requested */
     display: flex;
-    gap: 12px;
+    gap: 10px;
 }
 
-/* ROW 1 — Dropdown + Search + Filters */
+/* ---------------------------------------------------------
+   TOP BAR (search + dropdown + filters)
+--------------------------------------------------------- */
+
 .top-bar {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 0 16px;
-    margin-bottom: 10px; /* small space between row1 and row2 */
+    gap: 10px;              /* reduced */
+    margin: 10px 20px 6px 20px; /* tighter */
 }
 
-/* DROPDOWN */
+/* Dropdown */
 .modeSelect {
-    font-size: 14px; /* was 18 */
-    padding: 6px 10px;
-    height: 36px; /* was 45 */
-    border-radius: 8px;
+    font-size: 14px;        /* was 18 */
+    padding: 5px 8px;
+    height: 32px;           /* was ~44 */
+    border-radius: 6px;
 }
 
-/* SEARCH BAR — 20 percent smaller */
+/* Search bar */
 #input {
-    font-size: 16px; /* was 20 */
-    padding: 10px 14px; /* trimmed */
-    height: 38px; /* was around 48 */
-    width: 78%; /* matches screenshot, only scaled */
-    border-radius: 10px;
+    font-size: 14px;        /* was 18 */
+    padding: 7px 10px;      /* was 10/14 */
+    height: 34px;           /* was 44 */
+    flex-grow: 1;
+    border-radius: 6px;
     border: 1px solid #2b2d31;
     background: #111;
     color: #eee;
 }
 
-/* CHECKBOX LABELS (right side) */
-.button-row label {
-    font-size: 16px; /* was 20 */
-    display: flex;
-    align-items: center;
-}
-
-/* ROW 2 — Buttons */
+/* Filter row (Images / Videos / Other) */
 .button-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 0 16px;
-    margin-bottom: 20px;
+    gap: 10px;              /* reduced */
+    margin: 6px 20px 10px 20px;
     flex-wrap: wrap;
 }
 
-/* UNIVERSAL BUTTON SHRINK (20 percent smaller) */
+.button-row label {
+    font-size: 14px;        /* was 18 */
+}
+
+/* Buttons (all standard buttons) */
 button {
-    font-size: 16px; /* was 20 */
-    padding: 10px 16px; /* was larger */
-    height: 44px; /* was 55 */
-    border-radius: 12px; /* was 16 */
+    font-size: 14px;        /* was 18 */
+    padding: 7px 12px;      /* reduced */
+    height: 34px;           /* was 44 */
+    border-radius: 6px;
     border: 1px solid #2b2d31;
     background: #e5e5e5;
     color: #000;
     cursor: pointer;
 }
 
-/* GRID — untouched except scaled spacing */
+/* Load Posts button */
+.loadBtn {
+    font-size: 14px;
+    padding: 7px 14px;
+    height: 34px;
+    border-radius: 6px;
+}
+
+/* ---------------------------------------------------------
+   GRID LAYOUT
+--------------------------------------------------------- */
+
 #results {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    width: 96%;
-    margin: 10px auto 70px auto;
+    gap: 14px;               /* smaller */
+    width: 94%;
+    margin: 18px auto 70px auto;
 }
 
-/* 2-column override */
-.force-2-cols {
-    grid-template-columns: repeat(2, 1fr) !important;
-}
+.force-2-cols { grid-template-columns: repeat(2, 1fr) !important; }
+.force-3-cols { grid-template-columns: repeat(3, 1fr) !important; }
 
-/* POST CARD */
+/* ---------------------------------------------------------
+   POST CARD
+--------------------------------------------------------- */
+
 .post {
     background: #18191b;
-    border-radius: 12px;
+    border-radius: 10px;     /* slightly smaller */
     border: 1px solid #2b2d31;
-    padding-bottom: 10px;
+    overflow: hidden;
+    padding-bottom: 8px;
 }
 
 .post-title {
-    font-size: 16px; /* scaled */
-    padding: 10px 12px 6px 12px;
+    padding: 6px 10px 6px 10px;
+    font-size: 12px;         /* was 16 */
+    font-weight: bold;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -125,15 +137,16 @@ button {
     white-space: normal;
 }
 
-/* ARROWS */
 .title-arrow {
-    font-size: 16px;
-    margin-left: 6px;
-    cursor: pointer;
+    font-size: 12px;         /* reduced */
+    margin-left: 4px;
     opacity: 0.7;
 }
 
-/* MEDIA TILE */
+/* ---------------------------------------------------------
+   MEDIA TILE
+--------------------------------------------------------- */
+
 .tile-media {
     width: 100%;
     aspect-ratio: 4/5;
@@ -148,44 +161,91 @@ button {
     object-fit: cover;
 }
 
-/* TEXT PLACEHOLDER */
+/* text placeholder */
 .placeholder-media {
-    font-size: 22px; /* was 30 */
+    color: #8be;
+    font-size: 18px;       /* reduced */
     display: flex;
     justify-content: center;
     align-items: center;
+    height: 100%;
 }
 
-/* GALLERY ARROWS */
+/* gallery arrows */
 .gallery-arrow-main {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 22px; /* scaled */
-    padding: 6px 10px;
+    color: white;
+    font-size: 20px;       /* was 26 */
+    padding: 4px 8px;
     background: rgba(0,0,0,0.45);
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-    user-select: none;
 }
 
-.gallery-arrow-main-left { left: 8px; }
-.gallery-arrow-main-right { right: 8px; }
+.gallery-arrow-main-left  { left: 6px; }
+.gallery-arrow-main-right { right: 6px; }
 
-/* URL LINE */
+/* ---------------------------------------------------------
+   URL LINE
+--------------------------------------------------------- */
 .post-url {
-    font-size: 12px; /* smaller */
-    padding: 10px 12px 4px 12px;
+    padding: 6px 10px 4px 10px;
+    font-size: 11px;        /* reduced */
+    color: #9df;
+    word-break: break-all;
+}
+
+.post-url a {
     color: #9df;
 }
 
-/* LARGE VIEW MODAL */
+/* ---------------------------------------------------------
+   MODAL VIEW (large image/video)
+--------------------------------------------------------- */
+
+.large-view {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9000;
+}
+
 .large-view img,
 .large-view video {
-    max-width: 92%;
-    max-height: 92%;
+    max-width: 90%;
+    max-height: 90%;
 }
 
 .large-view-close {
-    font-size: 30px; /* reduced */
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    font-size: 30px;        /* was 40 */
+    cursor: pointer;
+    color: white;
+}
+
+/* ---------------------------------------------------------
+   SCROLL TO TOP
+--------------------------------------------------------- */
+
+#scrollTopBtn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: #83f3df;
+    border: none;
+    color: #000;
+    padding: 8px 14px;
+    border-radius: 50px;
+    font-size: 14px;        /* reduced */
+    cursor: pointer;
+    z-index: 3000;
 }
