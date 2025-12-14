@@ -1,106 +1,225 @@
-/* =============================
-   BASIC PAGE + HEADER
-============================= */
+/* =========================================================
+   main.css — Version 1.2.5
+   Compact UI + Silver Load Posts button
+========================================================= */
+
 body {
     margin: 0;
     background: #0d0d0e;
-    color: #ddd;
+    color: #eee;
     font-family: Arial, sans-serif;
 }
 
-h1 {
-    font-size: 38px;
-    padding: 12px 20px;
+/* ---------------------------------------------------------
+   TITLE
+--------------------------------------------------------- */
+.title {
+    font-size: 42px;
+    font-weight: bold;
     color: #9ff;
+    margin: 20px;
 }
 
-/* =============================
-   VERSION BOX (unchanged)
-============================= */
+/* ---------------------------------------------------------
+   VERSION BOX — EXACT top-right style
+--------------------------------------------------------- */
 #versionBox {
     position: absolute;
     top: 15px;
     right: 15px;
-    background: rgba(150, 180, 255, 0.15);
-    padding: 8px 16px;
-    border-radius: 12px;
-    color: #b7d9ff;
-    font-size: 12px;
+    background: rgba(140,155,200,0.18);
+    padding: 10px 18px;
+    border-radius: 14px;
+    font-size: 13px;
+    color: #cfe1ff;
     display: flex;
-    gap: 12px;
+    gap: 14px;
 }
 
-/* =============================
-   ROW LAYOUT
-============================= */
+/* ---------------------------------------------------------
+   ROWS + LAYOUT
+--------------------------------------------------------- */
 .row {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 20px;
-    flex-wrap: wrap;
+    margin: 10px 20px;
 }
 
-/* ROW 1 exact layout */
-.row1 .modeSelect {
-    width: 70px;
-    height: 40px;
-    font-size: 14px;
+.row-top {
+    margin-top: 30px;
 }
 
-.row1 .input {
+.row-buttons {
+    margin-top: 4px;
+}
+
+/* ---------------------------------------------------------
+   INPUT ELEMENTS
+--------------------------------------------------------- */
+.dropdown {
+    font-size: 16px;
+    padding: 6px 10px;
+    height: 38px;
+    border-radius: 8px;
+}
+
+.searchBox {
     flex: 1;
-    height: 40px;
-    padding: 6px 12px;
+    height: 38px;
+    font-size: 16px;
+    padding: 6px 14px;
+    border-radius: 8px;
     background: #111;
-    border: 1px solid #333;
-    border-radius: 6px;
-    font-size: 14px;
+    border: 1px solid #2b2d31;
     color: #ddd;
 }
 
-.checkboxes label {
-    font-size: 14px;
-    margin-right: 8px;
-    white-space: nowrap;
+/* ---------------------------------------------------------
+   CHECKBOXES
+--------------------------------------------------------- */
+.checks label {
+    font-size: 16px;
+    margin-left: 8px;
 }
 
-/* ROW 2 EXACT order */
-.row2 button {
-    font-size: 14px;
-    padding: 8px 14px;
-    border-radius: 8px;
-    background: #e5e5e5;
+/* ---------------------------------------------------------
+   BUTTONS (small clean like screenshot #2)
+--------------------------------------------------------- */
+.btn {
+    font-size: 16px;
+    padding: 8px 18px;
+    background: #e3e3e3;
     color: #000;
-    border: 1px solid #999;
+    border-radius: 10px;
+    border: 1px solid #aaa;
     cursor: pointer;
 }
 
-/* =============================
-   RESULTS GRID (unchanged)
-============================= */
+/* ---------------------------------------------------------
+   SILVER LOAD POSTS BUTTON (screenshot #1)
+--------------------------------------------------------- */
+.btn.silver {
+    background: #f1f1f1;
+    border: 1px solid #8d8d8d;
+    font-weight: 600;
+    box-shadow: 0 2px 3px rgba(0,0,0,0.25);
+}
+
+/* ---------------------------------------------------------
+   RESULTS GRID
+--------------------------------------------------------- */
 #results {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 18px;
-    width: 95%;
-    margin: 20px auto 80px auto;
+    width: 96%;
+    margin: 20px auto;
 }
 
-.force-2-cols { grid-template-columns: repeat(2, 1fr) !important; }
-.force-3-cols { grid-template-columns: repeat(3, 1fr) !important; }
+.force-2-cols { grid-template-columns: repeat(2, 1fr); }
+.force-3-cols { grid-template-columns: repeat(3, 1fr); }
 
-/* =============================
-   SCROLL TOP BUTTON
-============================= */
-#scrollTopBtn {
+/* ---------------------------------------------------------
+   POST CARD
+--------------------------------------------------------- */
+.post {
+    background: #18191b;
+    border-radius: 12px;
+    border: 1px solid #2b2d31;
+    overflow: hidden;
+}
+
+.post-title {
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* media tile */
+.tile-media {
+    width: 100%;
+    aspect-ratio: 4/5;
+    background: #000;
+    position: relative;
+}
+
+.tile-media img,
+.tile-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* gallery arrows */
+.gallery-arrow-main {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    background: rgba(0,0,0,0.55);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.gallery-arrow-main-left { left: 8px; }
+.gallery-arrow-main-right { right: 8px; }
+
+/* URL line */
+.post-url {
+    padding: 8px 10px;
+    font-size: 13px;
+    word-break: break-all;
+    color: #9df;
+}
+
+/* ---------------------------------------------------------
+   LARGE VIEW
+--------------------------------------------------------- */
+.large-view {
     position: fixed;
-    left: 20px;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.92);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5000;
+}
+
+.large-view img,
+.large-view video {
+    max-width: 90%;
+    max-height: 90%;
+}
+
+.large-view-close {
+    position: absolute;
+    top: 20px; right: 30px;
+    font-size: 36px;
+    cursor: pointer;
+    color: white;
+}
+
+/* ---------------------------------------------------------
+   SCROLL TO TOP BUTTON
+--------------------------------------------------------- */
+.scrollTopBtn {
+    position: fixed;
     bottom: 20px;
-    padding: 12px 20px;
-    background: #9ff;
-    border-radius: 40px;
+    left: 20px;
+    background: #83f3df;
+    padding: 10px 18px;
+    border-radius: 50px;
+    font-size: 16px;
+    color: black;
     border: none;
     cursor: pointer;
-    font-size: 14px;
+    z-index: 3000;
 }
