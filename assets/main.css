@@ -1,234 +1,247 @@
 /* =========================================================
-   main.css — v1.2.6 (20% UI scale reduction)
-   Shrinks all UI elements proportionally without changing layout
+   main.css — Version v1.2.6
+   UI TRIM UPDATE
+   • Reduce global UI scale by ~20 percent
+   • Search bar 10 percent smaller
+   • Add spacing between top rows
+   • Match reference screenshot proportions
    ========================================================= */
 
-/* Base */
+/* PAGE + HEADER */
 body {
     margin: 0;
-    padding: 0;
-    background: #0e0f10;
-    color: #ddd;
-    font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    background: #0d0d0e;
+    color: #dcdcdc;
+    font-family: Arial, sans-serif;
 }
 
-/* Title */
-#title {
-    font-size: 44px;      /* was ~55 */
-    font-weight: 700;
-    padding: 26px 26px 10px;
-    color: #bff;
+h1 {
+    font-size: 32px;     /* was 40 */
+    color: #9ff;
+    margin: 16px;
 }
 
-/* Row layout */
-.row {
+/* VERSION BOX */
+#versionBox {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(150, 180, 255, 0.15);
+    color: #b7d9ff;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 10px;       /* small like your screenshot */
+    border: 1px solid rgba(180, 210, 255, 0.25);
     display: flex;
-    flex-wrap: wrap;
+    gap: 10px;             /* horizontal instead of vertical */
+}
+
+/* TOP BAR (ROW 1) */
+.top-bar {
+    display: flex;
     align-items: center;
-    gap: 12px;             /* smaller spacing */
-    padding: 0 22px;
+    gap: 10px;
+    padding: 0 16px;
+    margin-bottom: 8px;    /* space between row1 and row2 */
 }
 
-/* Dropdown */
-.select-box {
-    font-size: 17px;       /* was ~21 */
-    padding: 8px 10px;
-    border-radius: 10px;
-    background: #202226;
-    color: #fafafa;
-    border: 1px solid #444;
+/* DROPDOWN */
+.modeSelect {
+    font-size: 14px;      /* was 18 */
+    padding: 6px 10px;
+    height: 34px;
+    border-radius: 6px;
 }
 
-/* Search input */
+/* SEARCH FIELD */
 #input {
-    flex: 1;
-    font-size: 17px;       /* was 21 */
-    padding: 12px 14px;    /* reduced from 16+ */
-    background: #1a1c1f;
-    border: 1px solid #444;
-    border-radius: 10px;
-    color: white;
+    font-size: 14px;      /* was 18 */
+    padding: 8px 10px;
+    height: 34px;
+    width: 88%;           /* 10% smaller than previous */
+    border-radius: 6px;
+    border: 1px solid #2b2d31;
+    background: #111;
+    color: #eee;
 }
 
-/* Buttons shared */
-.button {
-    font-size: 17px;       /* was 22 */
-    padding: 12px 18px;    /* was ~15–20 */
-    background: #e7e7eb;
+/* CHECKBOX LABELS */
+.button-row label {
+    font-size: 14px;   /* reduced */
+    display: flex;
+    align-items: center;
+}
+
+/* ROW 2 BUTTON ROW */
+.button-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+/* BUTTONS */
+button {
+    font-size: 14px;       /* trimmed */
+    padding: 6px 10px;     
+    height: 34px;          /* was 44 */
+    border-radius: 6px;
+    border: 1px solid #2b2d31;
+    background: #e5e5e5;
     color: #000;
-    border-radius: 14px;
-    border: 1px solid #999;
     cursor: pointer;
 }
 
-.button:active {
-    background: #d8d8dc;
+.loadBtn {
+    font-size: 14px;
+    height: 34px;
 }
 
-/* Checkboxes & labels */
-.filter-box {
-    font-size: 18px;       /* was 22 */
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-/* Version bubble (top right) */
-#versionBox {
-    position: absolute;
-    top: 18px;
-    right: 18px;
-
-    font-size: 14px;       /* was 18 */
-    padding: 8px 18px;
-    background: #1c2030;
-    border: 1px solid #444;
-    border-radius: 18px;
-    color: #cfd8ff;
-
-    display: flex;
-    gap: 10px;
-}
-
-/* Posts grid */
+/* GRID OF POSTS */
 #results {
-    margin-top: 14px;
-    padding: 0 16px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
+    gap: 12px;             /* smaller */
+    width: 96%;
+    margin: 10px auto 70px auto;
 }
 
 .force-2-cols {
     grid-template-columns: repeat(2, 1fr) !important;
 }
-
 .force-3-cols {
     grid-template-columns: repeat(3, 1fr) !important;
 }
 
-/* Card wrapper */
+/* POST CARD */
 .post {
-    background: #1a1b1f;
-    border-radius: 14px;
+    background: #18191b;
+    border-radius: 10px;
+    border: 1px solid #2b2d31;
     overflow: hidden;
     padding-bottom: 8px;
-    border: 1px solid #333;
 }
 
-/* Title inside card */
 .post-title {
-    font-size: 16px;      /* was 20 */
-    font-weight: 600;
-    padding: 12px;
+    padding: 8px 10px 6px 10px;
+    font-size: 14px;     /* trimmed */
+    font-weight: bold;
+    color: #eee;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    position: relative;
-}
-
-/* Expandable title arrow */
-.title-arrow {
-    font-size: 16px;
-    margin-left: 6px;
-    cursor: pointer;
 }
 
 .post-title.full {
     white-space: normal;
 }
 
-/* Media tile area */
+/* TITLE EXPAND ARROW */
+.title-arrow {
+    margin-left: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+/* MEDIA TILE */
 .tile-media {
     width: 100%;
-    height: 360px;         /* was 440 */
+    aspect-ratio: 4 / 5;
     background: #000;
     position: relative;
 }
 
 .tile-media img,
-.tile-media video,
-.tile-media iframe {
+.tile-media video {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
 }
 
-/* Placeholder for text posts */
+/* TEXT POST PLACEHOLDER */
 .placeholder-media {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 100%;
     height: 100%;
-    font-size: 20px;      /* was 26 */
-    color: #89b2ff;
+    background: #000;
+    color: #8be;
+    font-size: 20px;   /* smaller */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* Gallery arrows */
+/* GALLERY ARROWS (MAIN GRID) */
 .gallery-arrow-main {
     position: absolute;
-    top: 45%;
+    top: 50%;
     transform: translateY(-50%);
-    padding: 6px 10px;    /* smaller arrow buttons */
-    background: rgba(0, 0, 0, 0.45);
-    font-size: 22px;      /* was 28 */
-    cursor: pointer;
-    color: #fff;
+    color: white;
+    font-size: 20px;       /* smaller */
+    font-weight: bold;
+    background: rgba(0,0,0,0.45);
+    padding: 4px 8px;
     border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
 }
 
-.gallery-arrow-main-left {
-    left: 6px;
-}
+.gallery-arrow-main-left { left: 6px; }
+.gallery-arrow-main-right { right: 6px; }
 
-.gallery-arrow-main-right {
-    right: 6px;
-}
-
-/* URL text */
+/* URL LINE */
 .post-url {
-    font-size: 13px;      /* was 16 */
-    padding: 10px 10px 0;
-    word-break: break-all;
+    padding: 8px 10px 4px 10px;
+    font-size: 12px;
+    color: #9df;
 }
 
 .post-url a {
-    color: #8ab6ff;
+    color: #9df;
 }
 
-/* Large modal view */
+/* LARGE VIEW (modal) */
 .large-view {
     position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.9);
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
     display: flex;
-    align-items: center;
     justify-content: center;
-    z-index: 9999;
+    align-items: center;
+    z-index: 9000;
 }
 
 .large-view img,
 .large-view video {
-    max-width: 94%;
-    max-height: 94%;
+    max-width: 92%;
+    max-height: 92%;
+    border-radius: 6px;
 }
 
 .large-view-close {
     position: absolute;
-    top: 20px;
+    top: 16px;
     right: 20px;
-    font-size: 32px;      /* was 40 */
-    color: #fff;
+    font-size: 30px; /* reduced */
+    cursor: pointer;
+    color: white;
 }
 
-/* Scroll to top button */
+/* SCROLL TO TOP BUTTON */
 #scrollTopBtn {
     position: fixed;
-    right: 18px;
-    bottom: 18px;
-    font-size: 17px;
-    padding: 12px 16px;
-    border-radius: 14px;
-    background: #e7e7eb;
+    bottom: 20px;
+    left: 20px;
+    background: #83f3df;
     color: #000;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 40px;
+    cursor: pointer;
+    font-size: 14px;
+    z-index: 3000;
 }
