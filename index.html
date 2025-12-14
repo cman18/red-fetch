@@ -4,46 +4,44 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- NO-CACHE HEADERS -->
+    <!-- Cache Bypass -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
     <title>Red Fetch</title>
 
-    <!-- VERSION BOX (horizontal layout, small font) -->
     <style>
+        /* Horizontal version box */
         #versionBox {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(150,180,255,0.10);
-            border: 1px solid rgba(180,210,255,0.25);
-            border-radius: 8px;
-            padding: 4px 8px;
+            top: 16px;
+            right: 16px;
+            background: rgba(150,180,255,0.13);
+            color: #cfe5ff;
+            padding: 8px 14px;
             font-size: 10px;
-            color: #b7d9ff;
             display: flex;
-            gap: 12px;
-            z-index: 50;
+            gap: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(180,210,255,0.25);
         }
         #versionBox span {
             white-space: nowrap;
         }
     </style>
 
-    <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1.2.1">
+    <link id="mainCSS" rel="stylesheet" href="assets/main.css?v=1.2.5">
 </head>
 
 <body>
 
-    <h1 id="titleHeader">Red Fetch</h1>
+    <h1>Red Fetch</h1>
 
-    <!-- Version info -->
     <div id="versionBox">
-        <span>Index v1.2.1</span>
-        <span>CSS v1.2.1</span>
-        <span>JS v1.2.1</span>
+        <span>Index v1.2.5</span>
+        <span>CSS v1.2.5</span>
+        <span>JS v1.2.5</span>
     </div>
 
     <!-- TOP BAR -->
@@ -56,46 +54,33 @@
 
         <input id="input" class="input" type="text" placeholder="User or Subreddit">
 
-        <!-- Load Posts first -->
         <button id="loadBtn" class="loadBtn">Load Posts</button>
+        <button id="copyBtn" class="smallBtn">Copy URL</button>
+        <button id="clearBtn" class="smallBtn">Clear</button>
 
-        <!-- Filters beside search bar -->
-        <label><input type="checkbox" id="imagesChk" checked> Images</label>
-        <label><input type="checkbox" id="videosChk" checked> Videos</label>
-        <label><input type="checkbox" id="otherChk" checked> Other</label>
+        <!-- FILTERS -->
+        <div class="filters">
+            <label><input type="checkbox" id="imagesChk" checked> Images</label>
+            <label><input type="checkbox" id="videosChk" checked> Videos</label>
+            <label><input type="checkbox" id="otherChk" checked> Other</label>
+        </div>
 
+        <button id="colToggleBtn" class="smallBtn">Columns: 3</button>
+        <button id="zipBtn" class="smallBtn">Download ZIP</button>
     </div>
 
-    <!-- BUTTON ROW -->
-    <div class="button-row">
-        <button id="copyBtn">Copy URL</button>
-        <button id="clearBtn">Clear</button>
-        <button id="colToggleBtn">Columns: 3</button>
-        <button id="zipBtn">Download ZIP</button>
-        <button id="exampleBtn">Example</button>
-    </div>
-
-    <!-- RESULTS GRID -->
     <div id="results"></div>
 
-    <!-- SCROLL TO TOP -->
     <button id="scrollTopBtn">Top</button>
 
-    <!-- JS (with cache bust) -->
-    <script id="mainJS" src="assets/app.js?v=1.2.1"></script>
+    <script id="mainJS" src="assets/app.js?v=1.2.5"></script>
 
-    <!-- RUNTIME CACHE-BUSTER + EXAMPLE LOADER -->
+    <!-- Anti-cache -->
     <script>
-        (function() {
+        (function () {
             const ts = Date.now();
             document.getElementById("mainCSS").href = "assets/main.css?v=" + ts;
-            document.getElementById("mainJS").src  = "assets/app.js?v=" + ts;
-
-            const ex = document.getElementById("exampleBtn");
-            ex.onclick = () => {
-                input.value = "https://www.reddit.com/user/Euna_Chris/submitted/";
-                loadBtn.click();
-            };
+            document.getElementById("mainJS").src   = "assets/app.js?v=" + ts;
         })();
     </script>
 
