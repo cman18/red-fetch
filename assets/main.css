@@ -1,217 +1,106 @@
-/* =========================================================
-   main.css — Version v1.2.1
-   Compact UI
-   Clean proportions matching your screenshot
-   Consistent small fonts
-   ========================================================= */
-
-/* PAGE + HEADER */
-
+/* =============================
+   BASIC PAGE + HEADER
+============================= */
 body {
     margin: 0;
     background: #0d0d0e;
-    color: #dcdcdc;
+    color: #ddd;
     font-family: Arial, sans-serif;
 }
 
 h1 {
-    font-size: 20px;
-    margin: 16px;
+    font-size: 38px;
+    padding: 12px 20px;
     color: #9ff;
 }
 
-/* TOP BAR */
+/* =============================
+   VERSION BOX (unchanged)
+============================= */
+#versionBox {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(150, 180, 255, 0.15);
+    padding: 8px 16px;
+    border-radius: 12px;
+    color: #b7d9ff;
+    font-size: 12px;
+    display: flex;
+    gap: 12px;
+}
 
-.top-bar {
+/* =============================
+   ROW LAYOUT
+============================= */
+.row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 0 14px;
+    gap: 12px;
+    padding: 10px 20px;
     flex-wrap: wrap;
 }
 
-.modeSelect {
-    font-size: 12px;
-    padding: 4px 6px;
-    height: 28px;
-    border-radius: 6px;
+/* ROW 1 exact layout */
+.row1 .modeSelect {
+    width: 70px;
+    height: 40px;
+    font-size: 14px;
 }
 
-#input {
-    font-size: 12px;
-    padding: 5px 8px;
-    height: 28px;
-    min-width: 220px;
-    flex-grow: 1;
-    border-radius: 6px;
-    border: 1px solid #2b2d31;
+.row1 .input {
+    flex: 1;
+    height: 40px;
+    padding: 6px 12px;
     background: #111;
-    color: #eee;
-}
-
-.loadBtn {
-    font-size: 12px;
-    padding: 4px 10px;
-    height: 28px;
+    border: 1px solid #333;
     border-radius: 6px;
+    font-size: 14px;
+    color: #ddd;
 }
 
-/* FILTERS NEXT TO SEARCH BAR */
-
-.top-bar label {
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    gap: 3px;
+.checkboxes label {
+    font-size: 14px;
+    margin-right: 8px;
+    white-space: nowrap;
 }
 
-/* BUTTON ROW */
-
-.button-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+/* ROW 2 EXACT order */
+.row2 button {
+    font-size: 14px;
     padding: 8px 14px;
-    flex-wrap: wrap;
-}
-
-button {
-    font-size: 12px;
-    padding: 4px 10px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #2b2d31;
+    border-radius: 8px;
     background: #e5e5e5;
     color: #000;
+    border: 1px solid #999;
     cursor: pointer;
 }
 
-/* GRID */
-
+/* =============================
+   RESULTS GRID (unchanged)
+============================= */
 #results {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    width: 96%;
-    margin: 16px auto 60px auto;
+    gap: 18px;
+    width: 95%;
+    margin: 20px auto 80px auto;
 }
 
-.force-2-cols {
-    grid-template-columns: repeat(2, 1fr) !important;
-}
+.force-2-cols { grid-template-columns: repeat(2, 1fr) !important; }
+.force-3-cols { grid-template-columns: repeat(3, 1fr) !important; }
 
-.force-3-cols {
-    grid-template-columns: repeat(3, 1fr) !important;
-}
-
-/* POST CARD */
-
-.post {
-    background: #18191b;
-    border-radius: 10px;
-    border: 1px solid #2b2d31;
-    overflow: hidden;
-    padding-bottom: 8px;
-}
-
-.post-title {
-    font-size: 12px;
-    padding: 6px 10px;
-    color: #eee;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* MEDIA TILE */
-
-.tile-media {
-    width: 100%;
-    aspect-ratio: 4/5;
-    background: #000;
-    position: relative;
-}
-
-.tile-media img,
-.tile-media video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* GALLERY ARROWS */
-
-.gallery-arrow-main {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 18px;
-    color: #fff;
-    background: rgba(0,0,0,0.35);
-    padding: 4px 8px;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.gallery-arrow-main-left {
-    left: 6px;
-}
-
-.gallery-arrow-main-right {
-    right: 6px;
-}
-
-/* URL LINE */
-
-.post-url {
-    font-size: 10px;
-    padding: 6px 10px;
-    color: #9df;
-}
-
-.post-url a {
-    color: #9df;
-}
-
-/* MODAL VIEW */
-
-.large-view {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.85);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9000;
-}
-
-.large-view img,
-.large-view video {
-    max-width: 92%;
-    max-height: 92%;
-}
-
-.large-view-close {
-    position: absolute;
-    top: 16px;
-    right: 22px;
-    font-size: 28px;
-    cursor: pointer;
-    color: white;
-}
-
-/* SCROLL-TO-TOP */
-
+/* =============================
+   SCROLL TOP BUTTON
+============================= */
 #scrollTopBtn {
     position: fixed;
-    bottom: 20px;
     left: 20px;
-    padding: 6px 12px;
-    font-size: 12px;
-    border-radius: 20px;
-    background: #83f3df;
-    color: #000;
-    z-index: 3000;
+    bottom: 20px;
+    padding: 12px 20px;
+    background: #9ff;
+    border-radius: 40px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
 }
