@@ -1,186 +1,234 @@
 /* =========================================================
-   main.css — Version 1.2.6 (Compact UI Fix)
-   Restores the smaller UI size from earlier screenshot.
-========================================================= */
+   main.css — v1.2.6 (20% UI scale reduction)
+   Shrinks all UI elements proportionally without changing layout
+   ========================================================= */
 
+/* Base */
 body {
     margin: 0;
-    background: #0d0d0e;
-    color: #eee;
-    font-family: Arial, sans-serif;
+    padding: 0;
+    background: #0e0f10;
+    color: #ddd;
+    font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
 }
 
 /* Title */
-.title {
-    font-size: 36px;
-    color: #9ff;
-    margin: 20px 20px 10px 20px;
+#title {
+    font-size: 44px;      /* was ~55 */
+    font-weight: 700;
+    padding: 26px 26px 10px;
+    color: #bff;
 }
 
-/* Version box */
-#versionBox {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: rgba(140,155,200,0.18);
-    padding: 6px 12px;
-    border-radius: 12px;
-    font-size: 11px;
-    display: flex;
-    gap: 10px;
-    color: #d4e3ff;
-}
-
-/* Rows */
+/* Row layout */
 .row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-    margin: 6px 20px;
+    gap: 12px;             /* smaller spacing */
+    padding: 0 22px;
 }
 
-/* ==============================
-   COMPACT INPUT ELEMENTS
-============================== */
-
-.dropdown {
-    font-size: 13px;
-    padding: 4px 8px;
-    height: 30px;
-    border-radius: 6px;
+/* Dropdown */
+.select-box {
+    font-size: 17px;       /* was ~21 */
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: #202226;
+    color: #fafafa;
+    border: 1px solid #444;
 }
 
-.searchBox {
+/* Search input */
+#input {
     flex: 1;
-    height: 32px;
-    font-size: 14px;
-    padding: 5px 10px;
-    border-radius: 8px;
-    background: #111;
-    border: 1px solid #2b2d31;
-    color: #ddd;
+    font-size: 17px;       /* was 21 */
+    padding: 12px 14px;    /* reduced from 16+ */
+    background: #1a1c1f;
+    border: 1px solid #444;
+    border-radius: 10px;
+    color: white;
 }
 
-/* Checkboxes */
-.checks label {
-    font-size: 13px;
-}
-
-.checks input {
-    width: 14px;
-    height: 14px;
-}
-
-/* ==============================
-   COMPACT BUTTONS
-============================== */
-
-.btn {
-    font-size: 13px;
-    padding: 6px 12px;
-    height: 32px;
-    border-radius: 8px;
-    border: 1px solid #aaa;
-    background: #e3e3e3;
+/* Buttons shared */
+.button {
+    font-size: 17px;       /* was 22 */
+    padding: 12px 18px;    /* was ~15–20 */
+    background: #e7e7eb;
     color: #000;
+    border-radius: 14px;
+    border: 1px solid #999;
     cursor: pointer;
 }
 
-/* Silver Load Posts button */
-.btn.silver {
-    background: #f1f1f1;
-    border: 1px solid #8d8d8d;
-    font-weight: 600;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+.button:active {
+    background: #d8d8dc;
 }
 
-/* ==============================
-   RESULTS GRID
-============================== */
+/* Checkboxes & labels */
+.filter-box {
+    font-size: 18px;       /* was 22 */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 
+/* Version bubble (top right) */
+#versionBox {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+
+    font-size: 14px;       /* was 18 */
+    padding: 8px 18px;
+    background: #1c2030;
+    border: 1px solid #444;
+    border-radius: 18px;
+    color: #cfd8ff;
+
+    display: flex;
+    gap: 10px;
+}
+
+/* Posts grid */
 #results {
+    margin-top: 14px;
+    padding: 0 16px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    width: 96%;
-    margin: 14px auto 80px auto;
+    gap: 16px;
 }
 
-.force-2-cols { grid-template-columns: repeat(2, 1fr); }
-.force-3-cols { grid-template-columns: repeat(3, 1fr); }
+.force-2-cols {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
 
-/* Post card */
+.force-3-cols {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+/* Card wrapper */
 .post {
-    background: #18191b;
-    border-radius: 10px;
-    border: 1px solid #2b2d31;
+    background: #1a1b1f;
+    border-radius: 14px;
     overflow: hidden;
+    padding-bottom: 8px;
+    border: 1px solid #333;
 }
 
+/* Title inside card */
 .post-title {
-    padding: 6px 8px;
-    font-size: 13px;
-    font-weight: bold;
+    font-size: 16px;      /* was 20 */
+    font-weight: 600;
+    padding: 12px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    position: relative;
 }
 
-/* Media block */
+/* Expandable title arrow */
+.title-arrow {
+    font-size: 16px;
+    margin-left: 6px;
+    cursor: pointer;
+}
+
+.post-title.full {
+    white-space: normal;
+}
+
+/* Media tile area */
 .tile-media {
     width: 100%;
-    aspect-ratio: 4/5;
+    height: 360px;         /* was 440 */
     background: #000;
     position: relative;
 }
 
 .tile-media img,
-.tile-media video {
+.tile-media video,
+.tile-media iframe {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+}
+
+/* Placeholder for text posts */
+.placeholder-media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 20px;      /* was 26 */
+    color: #89b2ff;
 }
 
 /* Gallery arrows */
 .gallery-arrow-main {
     position: absolute;
-    top: 50%;
+    top: 45%;
     transform: translateY(-50%);
-    font-size: 20px;
-    padding: 4px 8px;
-    background: rgba(0,0,0,0.5);
-    border-radius: 6px;
+    padding: 6px 10px;    /* smaller arrow buttons */
+    background: rgba(0, 0, 0, 0.45);
+    font-size: 22px;      /* was 28 */
     cursor: pointer;
+    color: #fff;
+    border-radius: 6px;
 }
 
-.gallery-arrow-main-left { left: 6px; }
-.gallery-arrow-main-right { right: 6px; }
+.gallery-arrow-main-left {
+    left: 6px;
+}
 
-/* URL line */
+.gallery-arrow-main-right {
+    right: 6px;
+}
+
+/* URL text */
 .post-url {
-    padding: 6px 8px;
-    font-size: 11px;
-    color: #9df;
+    font-size: 13px;      /* was 16 */
+    padding: 10px 10px 0;
     word-break: break-all;
 }
 
-/* Large modal */
-.large-view img,
-.large-view video {
-    max-width: 88%;
-    max-height: 88%;
+.post-url a {
+    color: #8ab6ff;
 }
 
-/* Scroll-to-top button */
-.scrollTopBtn {
+/* Large modal view */
+.large-view {
     position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.large-view img,
+.large-view video {
+    max-width: 94%;
+    max-height: 94%;
+}
+
+.large-view-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 32px;      /* was 40 */
+    color: #fff;
+}
+
+/* Scroll to top button */
+#scrollTopBtn {
+    position: fixed;
+    right: 18px;
     bottom: 18px;
-    left: 18px;
-    background: #83f3df;
-    padding: 8px 14px;
-    border-radius: 40px;
-    font-size: 13px;
-    color: black;
-    border: none;
-    cursor: pointer;
+    font-size: 17px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: #e7e7eb;
+    color: #000;
 }
