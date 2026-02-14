@@ -1,69 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Red Fetch</title>
+    <script type="module" crossorigin src="./assets/index-DVk7c3Hp.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BbDCGD1s.css">
+  </head>
 
-  <title>Red Fetch</title>
+  <body class="bg-neutral-900 text-neutral-100">
+    <div id="root"></div>
 
-  <!-- Cache-bust -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-
-  <link rel="stylesheet" href="assets/main.css?v=1.2.5" />
-</head>
-
-<body>
-
-  <h1 class="title">Red Fetch</h1>
-
-  <!-- VERSION BOX -->
-  <div id="versionBox">Index v1.2.5 • CSS v1.2.5 • JS v1.2.5</div>
-
-  <!-- ROW 1 -->
-  <div class="row row-top">
-      <select id="modeSelect" class="dropdown">
-          <option value="u">u/</option>
-          <option value="r">r/</option>
-      </select>
-
-      <input id="input" type="text" class="searchBox" placeholder="User ID or URL here">
-
-      <div class="checks">
-          <label><input type="checkbox" id="imagesChk" checked> Images</label>
-          <label><input type="checkbox" id="videosChk" checked> Videos</label>
-          <label><input type="checkbox" id="otherChk" checked> Other</label>
-      </div>
-  </div>
-
-  <!-- ROW 2 -->
-  <div class="row row-buttons">
-
-      <button id="loadBtn" class="btn silver">Load Posts</button>
-
-      <button id="copyBtn" class="btn">Copy URL</button>
-      <button id="clearBtn" class="btn">Clear</button>
-      <button id="colToggleBtn" class="btn">Columns: 3</button>
-      <button id="zipBtn" class="btn">Download ZIP</button>
-      <button id="exampleBtn" class="btn">Example</button>
-  </div>
-
-  <!-- RESULTS -->
-  <div id="results"></div>
-
-  <button id="scrollTopBtn" class="scrollTopBtn">Top</button>
-
-  <script src="assets/app.js?v=1.2.5"></script>
-
-  <script>
-      // Example button auto-fill
-      document.getElementById("exampleBtn").onclick = () => {
-          document.getElementById("input").value =
-              "https://www.reddit.com/user/Euna_Chris/submitted/";
-          document.getElementById("loadBtn").click();
-      };
-  </script>
-
-</body>
+    <!-- IMPORTANT: Vite entrypoint -->
+  </body>
 </html>
