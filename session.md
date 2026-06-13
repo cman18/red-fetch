@@ -10,18 +10,23 @@ Red Fetch is a Reddit media browser. Users enter a Reddit username (`u/`) or sub
 
 ---
 
-## Critical: No Source Files
+## Source Files DO Exist (correction — outdated claim below was wrong)
 
-The original React/Vite source files were deleted in commit `841a5c3`. Only the **compiled output** exists:
+Real React/Vite source lives at `c:/Users/atayl/Documents/Projects/Projects/Docker/RedScroller/` (NOT a git repo — untracked, edit on disk only):
 
-- `assets/index-DVk7c3Hp.js` — minified React bundle (all edits go here)
-- `assets/index-BbDCGD1s.css` — compiled Tailwind CSS
-- `index.html` — entry point, loads the two assets above
-- `404.html` — GitHub Pages 404 fallback
+- `src/App.tsx` — main component (search bar, controls, grid, viewer)
+- `src/RedScroller.code-workspace`, `vite.config.ts`, `package.json`, etc.
+- Version is tracked via a `// vNNN - ...` comment on line 1 of `App.tsx` (currently `v013`), separate from the `V0/Y0/X0` in-app version constants below — keep both in sync if changing version.
 
-**All code changes must be made directly in the minified JS and CSS.** Use Python `grep`/`find` to locate exact strings, then use the Edit tool for surgical replacements. Always verify the surrounding context before editing — bracket mismatches cause blank-page syntax errors.
+**Build & deploy workflow:**
+1. `cd` into RedScroller dir. If `node_modules` missing: `npm install` (yarn not available in this env).
+2. `npx vite build` → outputs `dist/index.html` + `dist/assets/*`.
+3. **CRITICAL:** `vite.config.ts` must have `base: '/red-fetch/'` — without it, asset paths are root-relative (`/assets/...`) and the GitHub Pages site (served at `/red-fetch/`) gets blank/broken page (404 on JS/CSS). This was missing originally and caused a broken deploy.
+4. Copy `dist/index.html` and `dist/assets/*` into `_rfpush/` (this repo), removing old hashed asset files first (filenames change every build).
+5. `git add -A && git commit && git push origin main` — GitHub Pages auto-deploys, 1-3 min.
 
-**Deployment:** `git push origin main` — GitHub Pages auto-deploys from main, no build step needed. Takes 1–3 minutes to go live.
+**Old/legacy minified-edit workflow (pre-source-recovery, may still apply to OTHER older asset bundles):**
+- `assets/index-DVk7c3Hp.js` / `assets/index-BbDCGD1s.css` were the previously deployed compiled output, edited directly via Python grep + Edit tool when source was believed lost. No longer needed now that source is available — prefer the source workflow above.
 
 ---
 
@@ -115,6 +120,13 @@ K0 (main app)
 ---
 
 ## Change History
+
+### 2026-06-10 — search bar redesign attempt (REVERTED)
+- Redesigned search bar/controls in `App.tsx` (source, see above): merged select+input+search button into one bordered pill, unified right-side controls to `rounded-lg`, added Enter-key submit, bumped source version comment to `v013`.
+- Built with `npx vite build`, deployed to `_rfpush/`. Site broke (blank page) — root cause: `vite.config.ts` had no `base: '/red-fetch/'`, so asset paths were `/assets/...` instead of `/red-fetch/assets/...` → 404 on JS/CSS.
+- Fixed `vite.config.ts` (`base: '/red-fetch/'`), rebuilt, redeployed — site still reported broken.
+- **Reverted both deploy commits** (`git revert` of the redesign + base-path-fix commits), site back to pre-session state (v4.8.2 / v0.4.0 minified bundle, commit `96d47ac`).
+- **Outstanding:** source `App.tsx` and `vite.config.ts` on disk still have the v013 redesign + base-path fix (uncommitted, untracked dir). If retrying: rebuild with the now-fixed `vite.config.ts` (base path already correct), redeploy, and actually verify the live URL loads before considering done — last redeploy wasn't confirmed working before user reported it broken again.
 
 ### v0.4.0 (2026-04-18)
 - **Fixed photo cropping** — removed `max-h-[420px]` cap from card media wrapper. Profile pictures and tall images now display at full natural height instead of being clipped at the bottom.
